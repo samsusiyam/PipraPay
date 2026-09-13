@@ -2087,6 +2087,78 @@
         }
     }
 
+    if (!class_exists('PipraPayReceiptPDF')) {
+        class PipraPayReceiptPDF extends FPDF
+        {
+            public function RoundedRect($x, $y, $w, $h, $r, $style = '', $corners = '1234')
+            {
+                $k = $this->k;
+                $hp = $this->h;
+                if($style=='F')
+                    $op='f';
+                elseif($style=='FD' || $style=='DF')
+                    $op='B';
+                else
+                    $op='S';
+                $MyArc = 4/3 * (sqrt(2) - 1);
+                $this->_out(sprintf('%.2F %.2F m',($x+$r)*$k,($hp-$y)*$k ));
+
+                $xc = $x+$w-$r;
+                $yc = $y+$r;
+                $this->_out(sprintf('%.2F %.2F l', $xc*$k,($hp-$y)*$k ));
+                if (strpos($corners, '2')===false)
+                    $this->_out(sprintf('%.2F %.2F l', ($x+$w)*$k,($hp-$y)*$k ));
+                else
+                    $this->_Arc($xc + $r*$MyArc, $yc - $r, $xc + $r, $yc - $r*$MyArc, $xc + $r, $yc);
+
+                $xc = $x+$w-$r;
+                $yc = $y+$h-$r;
+                $this->_out(sprintf('%.2F %.2F l',($x+$w)*$k,($hp-$yc)*$k));
+                if (strpos($corners, '3')===false)
+                    $this->_out(sprintf('%.2F %.2F l',($x+$w)*$k,($hp-($y+$h))*$k));
+                else
+                    $this->_Arc($xc + $r, $yc + $r*$MyArc, $xc + $r*$MyArc, $yc + $r, $xc, $yc + $r);
+
+                $xc = $x+$r;
+                $yc = $y+$h-$r;
+                $this->_out(sprintf('%.2F %.2F l',$xc*$k,($hp-($y+$h))*$k));
+                if (strpos($corners, '4')===false)
+                    $this->_out(sprintf('%.2F %.2F l',($x)*$k,($hp-($y+$h))*$k));
+                else
+                    $this->_Arc($xc - $r*$MyArc, $yc + $r, $xc - $r, $yc + $r*$MyArc, $xc - $r, $yc);
+
+                $xc = $x+$r;
+                $yc = $y+$r;
+                $this->_out(sprintf('%.2F %.2F l',($x)*$k,($hp-$yc)*$k ));
+                if (strpos($corners, '1')===false) {
+                    $this->_out(sprintf('%.2F %.2F l',($x)*$k,($hp-$y)*$k ));
+                    $this->_out(sprintf('%.2F %.2F l',($x+$r)*$k,($hp-$y)*$k ));
+                } else
+                    $this->_Arc($xc - $r, $yc - $r*$MyArc, $xc - $r*$MyArc, $yc - $r, $xc, $yc - $r);
+                $this->_out($op);
+            }
+
+            public function _Arc($x1, $y1, $x2, $y2, $x3, $y3)
+            {
+                $h = $this->h;
+                $this->_out(sprintf('%.2F %.2F %.2F %.2F %.2F %.2F c ', $x1*$this->k, ($h-$y1)*$this->k,
+                    $x2*$this->k, ($h-$y2)*$this->k, $x3*$this->k, ($h-$y3)*$this->k));
+            }
+
+            public static function cleanStr($str)
+            {
+                $str = (string)($str ?? '');
+                if (function_exists('iconv')) {
+                    $converted = @iconv('UTF-8', 'windows-1252//TRANSLIT', $str);
+                    if ($converted !== false) {
+                        return $converted;
+                    }
+                }
+                return utf8_decode($str);
+            }
+        }
+    }
+
     function pp_downloadReceiptPDF($data = []){
 
         if (!$data) {
@@ -2096,17 +2168,38 @@
         $tx = $data['transaction'];
         $brand = $data['brand'];
 
-        $amountPaid = money_add(money_sub($tx['amount'], $tx['discount_amount']), $tx['processing_fee']);
+        $amountPaid = money_add(money_sub($tx['amount'] ?? 0, $tx['discount_amount'] ?? 0), $tx['processing_fee'] ?? 0);
 
-        $pdf = new FPDF('P', 'mm', 'A4');
+        $pdf = new PipraPayReceiptPDF('P', 'mm', 'A4');
+        $pdf->SetMargins(15, 12, 15);
         $pdf->AddPage();
-        $pdf->SetAutoPageBreak(true, 15);
+        $pdf->SetAutoPageBreak(false);
+
+        // Brand colors
+        $primaryHex = !empty($data['options']['primary_color']) && $data['options']['primary_color'] !== '--' ? $data['options']['primary_color'] : '#4f46e5';
+        $cleanHex = ltrim($primaryHex, '#');
+        if (strlen($cleanHex) == 3) {
+            $pR = hexdec($cleanHex[0].$cleanHex[0]);
+            $pG = hexdec($cleanHex[1].$cleanHex[1]);
+            $pB = hexdec($cleanHex[2].$cleanHex[2]);
+        } elseif (strlen($cleanHex) == 6) {
+            $pR = hexdec(substr($cleanHex, 0, 2));
+            $pG = hexdec(substr($cleanHex, 2, 2));
+            $pB = hexdec(substr($cleanHex, 4, 2));
+        } else {
+            $pR = 79; $pG = 70; $pB = 229;
+        }
+
+        // 1. Top Decorative Brand Accent Bar
+        $pdf->SetFillColor($pR, $pG, $pB);
+        $pdf->Rect(15, 12, 180, 2.5, 'F');
+
+        // 2. Header Section
+        $yHeader = 18;
+        $logoRendered = false;
 
         if (!empty($brand['logo'])) {
             $logoPath = $brand['logo'];
-
-            // FPDF cannot read remote URLs unless allow_url_fopen is on.
-            // Download URL logos to a temp file so they always render.
             if (preg_match('/^https?:\/\//i', $logoPath)) {
                 if (function_exists('curl_init')) {
                     $tmp = tempnam(sys_get_temp_dir(), 'logo') . '.img';
@@ -2114,7 +2207,7 @@
                     curl_setopt_array($ch, [
                         CURLOPT_RETURNTRANSFER => true,
                         CURLOPT_BINARYTRANSFER => true,
-                        CURLOPT_TIMEOUT        => 15,
+                        CURLOPT_TIMEOUT        => 10,
                         CURLOPT_SSL_VERIFYPEER => false,
                         CURLOPT_SSL_VERIFYHOST => false,
                         CURLOPT_FOLLOWLOCATION => true,
@@ -2132,84 +2225,311 @@
             }
 
             try {
-                $pdf->Image($logoPath, 10, 10, 35);
-            } catch (Exception $e) {
-                // logo failed to load — continue without it
-            }
+                if (file_exists($logoPath)) {
+                    $pdf->Image($logoPath, 15, $yHeader, 0, 13);
+                    $logoRendered = true;
+                }
+            } catch (Exception $e) {}
 
             if (!empty($tmp) && file_exists($tmp)) {
                 @unlink($tmp);
             }
         }
 
-        $pdf->SetFont('Arial', 'B', 14);
-        $pdf->SetXY(50, 12);
-        $pdf->Cell(0, 8, $brand['name'], 0, 1);
+        if (!$logoRendered) {
+            $pdf->SetFont('Arial', 'B', 15);
+            $pdf->SetTextColor(15, 23, 42);
+            $pdf->SetXY(15, $yHeader);
+            $pdf->Cell(95, 7, PipraPayReceiptPDF::cleanStr($brand['name'] ?? 'Merchant'), 0, 1);
+        }
 
-        $pdf->SetFont('Arial', '', 10);
-        $pdf->SetX(50);
-        $pdf->Cell(0, 6, ($brand['city_town'] ?? '').', '.($brand['country'] ?? ''), 0, 1);
+        $brandAddress = trim(($brand['city_town'] ?? '') . (!empty($brand['city_town']) && !empty($brand['country']) ? ', ' : '') . ($brand['country'] ?? ''));
+        if (!empty($brandAddress) && $brandAddress !== ',') {
+            $pdf->SetFont('Arial', '', 8.5);
+            $pdf->SetTextColor(100, 116, 139);
+            $pdf->SetXY(15, $logoRendered ? $yHeader + 14 : $yHeader + 7);
+            $pdf->Cell(95, 4.5, PipraPayReceiptPDF::cleanStr($brandAddress), 0, 0);
+        }
 
-        $pdf->Ln(10);
+        // Header Right: RECEIPT Title & Details
+        $pdf->SetFont('Arial', 'B', 15);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->SetXY(110, $yHeader);
+        $pdf->Cell(85, 7, 'PAYMENT RECEIPT', 0, 1, 'R');
 
-        $pdf->SetFont('Arial', 'B', 16);
-        $pdf->Cell(0, 10, 'Payment Receipt', 0, 1, 'C');
+        $pdf->SetFont('Arial', 'B', 8.5);
+        $pdf->SetTextColor(71, 85, 105);
+        $pdf->SetXY(110, $yHeader + 7);
+        $pdf->Cell(85, 4.5, PipraPayReceiptPDF::cleanStr('Receipt #: ' . $tx['ref']), 0, 1, 'R');
 
-        $status = strtoupper($tx['status']);
+        $createdDate = convertUTCtoUserTZ($tx['created_date'], (empty($brand['timezone']) || $brand['timezone'] === '--') ? 'Asia/Dhaka' : $brand['timezone'], "M d, Y h:i A");
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->SetXY(110, $yHeader + 11.5);
+        $pdf->Cell(85, 4.5, PipraPayReceiptPDF::cleanStr('Date: ' . $createdDate), 0, 1, 'R');
 
-        $statusColors = [
-            'COMPLETED' => [46,204,113],
-            'PENDING'   => [241,196,15],
-            'REFUNDED'  => [52,152,219],
-            'CANCELED'  => [231,76,60],
+        // Divider
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->SetLineWidth(0.3);
+        $pdf->Line(15, 43, 195, 43);
+
+        // 3. Status & Hero Amount Box
+        $status = strtoupper($tx['status'] ?? 'INITIATED');
+        $statusConfig = [
+            'COMPLETED' => [
+                'bg'     => [220, 252, 231],
+                'text'   => [22, 101, 52],
+                'border' => [187, 247, 208],
+                'label'  => 'COMPLETED'
+            ],
+            'PENDING' => [
+                'bg'     => [254, 243, 199],
+                'text'   => [146, 64, 14],
+                'border' => [253, 230, 138],
+                'label'  => 'PENDING'
+            ],
+            'REFUNDED' => [
+                'bg'     => [224, 242, 254],
+                'text'   => [7, 89, 133],
+                'border' => [186, 230, 253],
+                'label'  => 'REFUNDED'
+            ],
+            'CANCELED' => [
+                'bg'     => [254, 226, 226],
+                'text'   => [153, 27, 27],
+                'border' => [254, 202, 202],
+                'label'  => 'CANCELED'
+            ],
+        ];
+        $stCfg = $statusConfig[$status] ?? [
+            'bg'     => [241, 245, 249],
+            'text'   => [71, 85, 105],
+            'border' => [203, 213, 225],
+            'label'  => $status
         ];
 
-        $color = $statusColors[$status] ?? [120,120,120];
+        // Hero Card Background
+        $pdf->SetFillColor(248, 250, 252);
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->RoundedRect(15, 47, 180, 26, 3, 'DF');
 
-        $pdf->Ln(3);
+        // Hero Card Left: Status
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->SetXY(22, 51.5);
+        $pdf->Cell(50, 4, 'PAYMENT STATUS', 0, 1);
+
+        $pdf->SetFillColor($stCfg['bg'][0], $stCfg['bg'][1], $stCfg['bg'][2]);
+        $pdf->SetDrawColor($stCfg['border'][0], $stCfg['border'][1], $stCfg['border'][2]);
+        $pdf->RoundedRect(22, 56.5, 34, 7.5, 2, 'DF');
+
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->SetTextColor($stCfg['text'][0], $stCfg['text'][1], $stCfg['text'][2]);
+        $pdf->SetXY(22, 56.5);
+        $pdf->Cell(34, 7.5, $stCfg['label'], 0, 0, 'C');
+
+        // Hero Card Right: Amount
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->SetXY(100, 50.5);
+        $pdf->Cell(90, 4, 'TOTAL AMOUNT PAID', 0, 1, 'R');
+
+        $pdf->SetFont('Arial', 'B', 19);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->SetXY(100, 54.5);
+        $pdf->Cell(90, 9, money_round($amountPaid, 2) . ' ' . PipraPayReceiptPDF::cleanStr($tx['currency']), 0, 1, 'R');
+
+        if (!empty($tx['local_net_amount']) && (!empty($tx['local_currency']) && $tx['local_currency'] != $tx['currency'])) {
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->SetTextColor(100, 116, 139);
+            $pdf->SetXY(100, 63.5);
+            $pdf->Cell(90, 4, PipraPayReceiptPDF::cleanStr('Local Equivalent: ' . money_round($tx['local_net_amount'], 2) . ' ' . $tx['local_currency']), 0, 1, 'R');
+        }
+
+        // 4. Two Info Cards (Paid By & Payment Info)
+        $yCards = 78;
+        $wCard  = 87;
+        $hCard  = 38;
+
+        // Card 1: Paid By (Left)
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->RoundedRect(15, $yCards, $wCard, $hCard, 2.5, 'DF');
+
+        // Header Tab
+        $pdf->SetFillColor(241, 245, 249);
+        $pdf->RoundedRect(15, $yCards, $wCard, 8, 2.5, 'DF', '12');
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->SetTextColor(71, 85, 105);
+        $pdf->SetXY(19, $yCards + 2);
+        $pdf->Cell(79, 4, 'CUSTOMER DETAILS', 0, 0);
+
+        // Content
+        $custName   = !empty($tx['customer']['name']) ? pp_dedupeName($tx['customer']['name']) : 'N/A';
+        $custEmail  = !empty($tx['customer']['email']) ? $tx['customer']['email'] : 'N/A';
+        $custMobile = !empty($tx['customer']['mobile']) ? $tx['customer']['mobile'] : 'N/A';
+
+        $pdf->SetXY(19, $yCards + 11);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(15, 5, 'Name:', 0, 0);
+        $pdf->SetFont('Arial', 'B', 8.5);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->Cell(64, 5, PipraPayReceiptPDF::cleanStr($custName), 0, 1);
+
+        $pdf->SetXY(19, $yCards + 17.5);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(15, 5, 'Email:', 0, 0);
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->SetTextColor(51, 65, 85);
+        $pdf->Cell(64, 5, PipraPayReceiptPDF::cleanStr($custEmail), 0, 1);
+
+        $pdf->SetXY(19, $yCards + 24);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(15, 5, 'Mobile:', 0, 0);
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->SetTextColor(51, 65, 85);
+        $pdf->Cell(64, 5, PipraPayReceiptPDF::cleanStr($custMobile), 0, 1);
+
+        // Card 2: Payment Details (Right)
+        $xRight = 108;
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->RoundedRect($xRight, $yCards, $wCard, $hCard, 2.5, 'DF');
+
+        // Header Tab
+        $pdf->SetFillColor(241, 245, 249);
+        $pdf->RoundedRect($xRight, $yCards, $wCard, 8, 2.5, 'DF', '12');
+        $pdf->SetFont('Arial', 'B', 7.5);
+        $pdf->SetTextColor(71, 85, 105);
+        $pdf->SetXY($xRight + 4, $yCards + 2);
+        $pdf->Cell(79, 4, 'TRANSACTION INFO', 0, 0);
+
+        // Content
+        $payMethod = !empty($tx['payment_method']) ? $tx['payment_method'] : 'Online Gateway';
+
+        $pdf->SetXY($xRight + 4, $yCards + 11);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(18, 5, 'Method:', 0, 0);
+        $pdf->SetFont('Arial', 'B', 8.5);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->Cell(61, 5, PipraPayReceiptPDF::cleanStr($payMethod), 0, 1);
+
+        $pdf->SetXY($xRight + 4, $yCards + 17.5);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(18, 5, 'Ref ID:', 0, 0);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(51, 65, 85);
+        $pdf->Cell(61, 5, PipraPayReceiptPDF::cleanStr($tx['ref']), 0, 1);
+
+        $pdf->SetXY($xRight + 4, $yCards + 24);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->Cell(18, 5, 'Date/Time:', 0, 0);
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->SetTextColor(51, 65, 85);
+        $pdf->Cell(61, 5, PipraPayReceiptPDF::cleanStr($createdDate), 0, 1);
+
+        // 5. Payment Breakdown Table
+        $yTable = 122;
+        $pdf->SetFillColor(15, 23, 42);
+        $pdf->SetDrawColor(15, 23, 42);
+        $pdf->RoundedRect(15, $yTable, 180, 8.5, 2, 'DF');
+
+        $pdf->SetFont('Arial', 'B', 8);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->SetXY(20, $yTable + 2);
+        $pdf->Cell(115, 4.5, 'DESCRIPTION', 0, 0);
+        $pdf->SetXY(135, $yTable + 2);
+        $pdf->Cell(55, 4.5, 'AMOUNT', 0, 1, 'R');
+
+        $currY = $yTable + 9.5;
+
+        // Base Amount Row
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->SetLineWidth(0.2);
+        $pdf->Line(15, $currY + 8.5, 195, $currY + 8.5);
+
+        $pdf->SetFont('Arial', '', 8.5);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->SetXY(20, $currY + 2);
+        $pdf->Cell(115, 4.5, 'Base Transaction Amount', 0, 0);
+        $pdf->SetFont('Arial', 'B', 8.5);
+        $pdf->SetXY(135, $currY + 2);
+        $pdf->Cell(55, 4.5, money_round($tx['amount'] ?? 0, 2) . ' ' . PipraPayReceiptPDF::cleanStr($tx['currency']), 0, 1, 'R');
+
+        $currY += 8.5;
+
+        // Discount Row
+        if (!empty($tx['discount_amount']) && floatval($tx['discount_amount']) > 0) {
+            $pdf->Line(15, $currY + 8.5, 195, $currY + 8.5);
+            $pdf->SetFont('Arial', '', 8.5);
+            $pdf->SetTextColor(22, 101, 52);
+            $pdf->SetXY(20, $currY + 2);
+            $pdf->Cell(115, 4.5, 'Promotional / Special Discount', 0, 0);
+            $pdf->SetFont('Arial', 'B', 8.5);
+            $pdf->SetXY(135, $currY + 2);
+            $pdf->Cell(55, 4.5, '-' . money_round($tx['discount_amount'], 2) . ' ' . PipraPayReceiptPDF::cleanStr($tx['currency']), 0, 1, 'R');
+            $currY += 8.5;
+        }
+
+        // Processing Fee Row
+        if (!empty($tx['processing_fee']) && floatval($tx['processing_fee']) > 0) {
+            $pdf->Line(15, $currY + 8.5, 195, $currY + 8.5);
+            $pdf->SetFont('Arial', '', 8.5);
+            $pdf->SetTextColor(71, 85, 105);
+            $pdf->SetXY(20, $currY + 2);
+            $pdf->Cell(115, 4.5, 'Payment Gateway Processing Fee', 0, 0);
+            $pdf->SetFont('Arial', 'B', 8.5);
+            $pdf->SetXY(135, $currY + 2);
+            $pdf->Cell(55, 4.5, '+' . money_round($tx['processing_fee'], 2) . ' ' . PipraPayReceiptPDF::cleanStr($tx['currency']), 0, 1, 'R');
+            $currY += 8.5;
+        }
+
+        // Grand Total Row
+        $currY += 2;
+        $pdf->SetFillColor(241, 245, 249);
+        $pdf->SetDrawColor(203, 213, 225);
+        $pdf->RoundedRect(15, $currY, 180, 10, 2, 'DF');
+
+        $pdf->SetFont('Arial', 'B', 9);
+        $pdf->SetTextColor(15, 23, 42);
+        $pdf->SetXY(20, $currY + 2.5);
+        $pdf->Cell(115, 5, 'TOTAL AMOUNT PAID', 0, 0);
+
         $pdf->SetFont('Arial', 'B', 12);
-        $pdf->SetTextColor($color[0], $color[1], $color[2]);
-        $pdf->Cell(0, 8, 'STATUS: '.$status, 0, 1, 'C');
-        $pdf->SetTextColor(0,0,0);
+        $pdf->SetTextColor($pR, $pG, $pB);
+        $pdf->SetXY(135, $currY + 2.5);
+        $pdf->Cell(55, 5, money_round($amountPaid, 2) . ' ' . PipraPayReceiptPDF::cleanStr($tx['currency']), 0, 1, 'R');
 
-        $pdf->Ln(6);
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(0, 6, 'Amount Paid', 0, 1, 'C');
+        // 6. Security Notice Box
+        $yNotice = $currY + 16;
+        $pdf->SetFillColor(248, 250, 252);
+        $pdf->SetDrawColor(226, 232, 240);
+        $pdf->RoundedRect(15, $yNotice, 180, 16, 2.5, 'DF');
 
-        $pdf->SetFont('Arial', 'B', 22);
-        $pdf->Cell(0, 12, money_round($amountPaid, 2), 0, 1, 'C');
+        $pdf->SetFont('Arial', 'I', 8);
+        $pdf->SetTextColor(100, 116, 139);
+        $pdf->SetXY(15, $yNotice + 3.5);
+        $pdf->Cell(180, 4.5, 'This is a computer-generated official receipt. No physical signature or stamp is required.', 0, 1, 'C');
 
-        $pdf->Ln(2);
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(0, 6, 'Local Net Amount: '.money_round($tx['local_net_amount'], 2).' '.$tx['local_currency'], 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 7.5);
+        $pdf->SetTextColor(148, 163, 184);
+        $pdf->SetXY(15, $yNotice + 8.5);
+        $pdf->Cell(180, 4, 'For any questions or support, please contact the merchant referencing the transaction ID.', 0, 1, 'C');
 
-        $pdf->Ln(6);
-        $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-        $pdf->Ln(6);
+        // 7. Footer Watermark
+        $watermark = !empty($data['options']['watermark_text']) ? $data['options']['watermark_text'] : 'Secured by PipraPay';
+        $pdf->SetFont('Arial', '', 7.5);
+        $pdf->SetTextColor(148, 163, 184);
+        $pdf->SetXY(15, 280);
+        $pdf->Cell(180, 4, PipraPayReceiptPDF::cleanStr($watermark . ' • Fast, Safe & Secure Digital Payments'), 0, 1, 'C');
 
-        sectionTitle($pdf, 'Transaction Details');
-        infoRow($pdf, 'Transaction Ref', $tx['ref']);
-        infoRow($pdf, 'Payment Method', $tx['payment_method']);
-        infoRow($pdf, 'Created Date', convertUTCtoUserTZ($tx['created_date'], (empty($brand['timezone']) || $brand['timezone'] === '--') ? 'Asia/Dhaka' : $brand['timezone'], "M d, Y h:i A"));
-
-        $pdf->Ln(3);
-        sectionTitle($pdf, 'Customer Details');
-        infoRow($pdf, 'Name', pp_dedupeName($tx['customer']['name']));
-        infoRow($pdf, 'Email', $tx['customer']['email']);
-        infoRow($pdf, 'Mobile', $tx['customer']['mobile']);
-
-        $pdf->Ln(3);
-        sectionTitle($pdf, 'Payment Breakdown');
-        infoRow($pdf, 'Amount', money_round($tx['amount'], 2).' '.$tx['currency']);
-        infoRow($pdf, 'Discount', money_round($tx['discount_amount'], 2).' '.$tx['currency']);
-        infoRow($pdf, 'Processing Fee', money_round($tx['processing_fee'], 2).' '.$tx['currency']);
-
-
-        $pdf->Ln(10);
-        $pdf->SetFont('Arial', 'I', 9);
-        $pdf->Cell(0, 6, 'This is a system generated receipt.', 0, 1, 'C');
-
-        $pdf->Output('D', 'Receipt-'.$tx['ref'].'.pdf');
+        $pdf->Output('D', 'Receipt-' . $tx['ref'] . '.pdf');
     }
 
     function pp_dedupeName($name)
@@ -2229,20 +2549,6 @@
         }
 
         return $name;
-    }
-
-    function sectionTitle($pdf, $title)
-    {
-        $pdf->SetFont('Arial', 'B', 13);
-        $pdf->Cell(0, 8, $title, 0, 1);
-    }
-
-    function infoRow($pdf, $label, $value)
-    {
-        $pdf->SetFont('Arial', 'B', 11);
-        $pdf->Cell(60, 8, $label, 0);
-        $pdf->SetFont('Arial', '', 11);
-        $pdf->Cell(0, 8, $value, 0, 1);
     }
 
     function resolveModuleLanguage($brandLanguage, array $supportedLanguages)
