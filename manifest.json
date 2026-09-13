@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.5",
-            "latest_version_code": "3.0.5",
-            "release_notes": "PipraPay v3.0.5 Update:\n• Auto Multi-Channel Payment Notifications (Telegram Bot, Discord, WhatsApp, SMTP Email, SMS) on all payment methods & gateways.\n• Seamless Core Event Hook for live transaction completion & status changes.\n• Enhanced 4-step update workflow with high-contrast active states.\n• Safety Backup Snapshot table action controls with dedicated Download & Delete buttons.\n• Performance optimizations and bug fixes.",
+            "latest_version_name": "v3.0.6",
+            "latest_version_code": "3.0.6",
+            "release_notes": "PipraPay v3.0.6 Hotfix & Feature Release:\n• Fixed HTTP 500 fatal syntax error during system updates & verification.\n• Fixed Safety Backup Snapshots direct download stream & deletion.\n• Automated multi-channel instant transaction notifications (Telegram Bot, Discord, WhatsApp, SMTP Email, SMS) on all payment methods.\n• Enhanced update workflow stability & snapshot file management.\n• Performance optimizations and bug fixes.",
             "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.6",
+                    "version_code": "3.0.6",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.5",
                     "version_code": "3.0.5",
@@ -46,12 +52,18 @@
             ]
         },
         "beta": {
-            "latest_version_name": "v3.0.5-beta",
-            "latest_version_code": "3.0.5",
-            "release_notes": "PipraPay v3.0.5 Update:\n• Auto Multi-Channel Payment Notifications (Telegram Bot, Discord, WhatsApp, SMTP Email, SMS) on all payment methods & gateways.\n• Seamless Core Event Hook for live transaction completion & status changes.\n• Enhanced 4-step update workflow with high-contrast active states.\n• Safety Backup Snapshot table action controls with dedicated Download & Delete buttons.\n• Performance optimizations and bug fixes.",
+            "latest_version_name": "v3.0.6-beta",
+            "latest_version_code": "3.0.6",
+            "release_notes": "PipraPay v3.0.6 Hotfix & Feature Release:\n• Fixed HTTP 500 fatal syntax error during system updates & verification.\n• Fixed Safety Backup Snapshots direct download stream & deletion.\n• Automated multi-channel instant transaction notifications (Telegram Bot, Discord, WhatsApp, SMTP Email, SMS) on all payment methods.\n• Enhanced update workflow stability & snapshot file management.\n• Performance optimizations and bug fixes.",
             "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.6-beta",
+                    "version_code": "3.0.6",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.5-beta",
                     "version_code": "3.0.5",

@@ -226,8 +226,8 @@
     $pp_adapter_loaded = true;
 
     $piprapay_current_version = [
-        'version_name' => 'v3.0.5',
-        'version_code' => '3.0.5',
+        'version_name' => 'v3.0.6',
+        'version_code' => '3.0.6',
         'version_hash' => '6b6f7c62e34e3680398387720dbd44a036d1a574860d5f90a3bd5d9b6280bea1
 c9515853f1fbf61175dd3dbce6eb011e4cf29fc43949ed4b562f6421b88c8773
 c0dc07a71b29a9da279310f2247affb16089334cc3da60fa0b4b4f06f78594cb
@@ -400,6 +400,39 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
         $global_response_currency_symbol = json_decode(getData($db_prefix.'currency','WHERE brand_id = :brand_id AND code = :code', '* FROM', $params),true);
         if($global_response_currency_symbol['status'] == true){
             $global_brand_currency_symbol = $global_response_currency_symbol['response'][0]['symbol'];
+        }
+    }
+
+    if (isset($_GET['action']) && $_GET['action'] === 'system-settings-update-backup-download') {
+        if ($global_user_login == true) {
+            if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', $global_user_response['response'][0]['role']) ||
+                !hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_update', $global_user_response['response'][0]['role'])) {
+                http_response_code(403);
+                exit('Access denied');
+            }
+            $fileName = isset($_GET['file']) ? basename(trim($_GET['file'])) : '';
+            $targetFile = __DIR__ . '/../../pp-media/storage/backup/' . $fileName;
+
+            if (!empty($fileName) && file_exists($targetFile) && (str_ends_with($fileName, '.zip') || str_ends_with($fileName, '.sql'))) {
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="' . $fileName . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . filesize($targetFile));
+                readfile($targetFile);
+                exit;
+            } else {
+                http_response_code(404);
+                exit('Backup file not found.');
+            }
+        } else {
+            http_response_code(403);
+            exit('Please log in to download backups.');
         }
     }
 
@@ -7469,9 +7502,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             $createBackup = get_env('system-settings-create_backup');
                             if ($createBackup !== 'no') {
                                 @mkdir($backupDir, 0755, true);
-                                @zipFolder($root, "$backupDir/" . ($piprapay_current_version['version_code'] ?? 'backup') . ".zip");
+                                $snapName = ($piprapay_current_version['version_code'] ?? 'backup') . "_" . date('Ymd_His');
+                                @zipFolder($root, "$backupDir/{$snapName}.zip");
                                 try {
-                                    @backupDatabasePDO("$backupDir/db_" . ($piprapay_current_version['version_code'] ?? 'backup') . ".sql");
+                                    @backupDatabasePDO("$backupDir/db_{$snapName}.sql");
                                 } catch (Throwable $e) {}
                             }
 
@@ -9470,11 +9504,14 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                                             insertData($db_prefix.'webhook_log', $columns, $values);
                                                                         }
-                                                                    if (!empty($all_transactions)) {
-                                                                        do_action('transactions.updated', $all_transactions);
                                                                     }
+                                                                }
 
-                                                                    echo json_encode(['status' => "true", 'title' => 'Transaction Verified', 'message' => 'The Transaction ID has been successfully verified.']);
+                                                                if (!empty($all_transactions)) {
+                                                                    do_action('transactions.updated', $all_transactions);
+                                                                }
+
+                                                                echo json_encode(['status' => "true", 'title' => 'Transaction Verified', 'message' => 'The Transaction ID has been successfully verified.']);
                                                             }else{
                                                                 echo json_encode(['status' => "false", 'title' => 'Transaction Not Found', 'message' => 'The Transaction ID you entered could not be verified. Please check the ID and try again after some time.']);
                                                             }
