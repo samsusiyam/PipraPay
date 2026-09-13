@@ -4661,12 +4661,27 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         exit();
                     }
 
-                    $homepageRedirect = escape_string($_POST['homepageRedirect'] ?? '');
-                    $adminPath = escape_string($_POST['adminPath'] ?? '');
-                    $invoicePath = escape_string($_POST['invoicePath'] ?? '');
-                    $paymentLinkPath = escape_string($_POST['paymentLinkPath'] ?? '');
-                    $paymentPath = escape_string($_POST['paymentPath'] ?? '');
-                    $cronPath = escape_string($_POST['cronPath'] ?? '');
+                    $homepageRedirect = trim(escape_string($_POST['homepageRedirect'] ?? ''));
+                    $adminPath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['adminPath'] ?? ''))));
+                    if (empty($adminPath)) {
+                        $adminPath = 'admin';
+                    }
+                    $invoicePath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['invoicePath'] ?? ''))));
+                    if (empty($invoicePath)) {
+                        $invoicePath = 'invoice';
+                    }
+                    $paymentLinkPath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['paymentLinkPath'] ?? ''))));
+                    if (empty($paymentLinkPath)) {
+                        $paymentLinkPath = 'payment-link';
+                    }
+                    $paymentPath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['paymentPath'] ?? ''))));
+                    if (empty($paymentPath)) {
+                        $paymentPath = 'payment';
+                    }
+                    $cronPath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['cronPath'] ?? ''))));
+                    if (empty($cronPath)) {
+                        $cronPath = 'cron';
+                    }
                     $default_timezone = escape_string($_POST['default_timezone'] ?? '');
                     $webhook_attempts_limit = escape_string($_POST['webhook_attempts_limit'] ?? '');
 
@@ -4679,7 +4694,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     set_env('geneal-application-settings-default_timezone', $default_timezone);
                     set_env('geneal-application-settings-webhook_attempts_limit', $webhook_attempts_limit);
 
-                    echo json_encode(['status' => 'true', 'title' => 'Settings Updated', 'message' => 'The application settings has been updated successfully.', 'csrf_token' => $new_csrf_token]);
+                    echo json_encode(['status' => 'true', 'title' => 'Settings Updated', 'message' => 'The application settings has been updated successfully.', 'new_admin_path' => $adminPath, 'csrf_token' => $new_csrf_token]);
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                 }

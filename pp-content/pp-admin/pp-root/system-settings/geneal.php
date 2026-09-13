@@ -219,6 +219,14 @@ if (!defined('PipraPay_INIT')) {
                         timeout: 6000,
                         top: 70
                     });
+
+                    var currentAdminPath = '<?php echo trim($path_admin, "/"); ?>';
+                    var newAdminPath = response.new_admin_path || adminPath.trim().replace(/^\/+|\/+$/g, '');
+                    if (newAdminPath !== '' && newAdminPath !== currentAdminPath) {
+                        setTimeout(function() {
+                            window.location.href = '<?php echo $site_url; ?>' + newAdminPath + '/system-settings';
+                        }, 1200);
+                    }
                 } else {
                     createToast({
                         title: response.title,
