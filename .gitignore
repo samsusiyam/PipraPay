@@ -1,8 +1,8 @@
-hostnibo_pay.sql
 *.sql
 !pp-content/pp-install/db.sql
-pp-bank-debug.log
+*.log
 .env
 .DS_Store
 Thumbs.db
+
 
