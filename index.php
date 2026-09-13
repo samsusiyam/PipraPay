@@ -1801,7 +1801,7 @@
                                     if (strtotime(getCurrentDatetime('Y-m-d H:i:s')) - strtotime(get_env('last-auto-update-check') ?: getCurrentDatetime('Y-m-d H:i:s')) >= 10*3600) {
                                         set_env('last-auto-update-check', getCurrentDatetime('Y-m-d H:i:s'));
 
-                                        $manifest = json_decode(file_get_contents('https://updates.piprapay.com/manifest.json'), true);
+                                        $manifest = pp_fetch_update_manifest();
 
                                         $current_code = $piprapay_current_version['version_code'];
                                         $current_name = $piprapay_current_version['version_name'];

@@ -7245,7 +7245,12 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                         set_env('last-auto-update-check', getCurrentDatetime('Y-m-d H:i:s'));
 
-                        $manifest = json_decode(file_get_contents('https://updates.piprapay.com/manifest.json'), true);
+                        $manifest = pp_fetch_update_manifest();
+
+                        if (!$manifest || !isset($manifest['channels'])) {
+                            echo json_encode(['status' => 'false', 'title' => 'Update Check Failed', 'message' => 'Unable to connect to GitHub update server. Please check your internet connection or try again later.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
 
                         $current_code = $piprapay_current_version['version_code'];
                         $current_name = $piprapay_current_version['version_name'];
@@ -7263,16 +7268,23 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $latest_name = null;
                         $latest_code = null;
                         $latest_hash = null;
+                        $download_url = null;
 
                         if ($channel_data) {
-                            $latest_name = $channel_data['latest_version_name'];
-                            $latest_code = $channel_data['latest_version_code'];
+                            $latest_name = $channel_data['latest_version_name'] ?? $current_name;
+                            $latest_code = $channel_data['latest_version_code'] ?? $current_code;
+                            $download_url = $channel_data['download_url'] ?? "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip";
 
                             $latest_hash = '';
-                            foreach ($channel_data['versions'] as $version) {
-                                if ($version['version_code'] === $latest_code) {
-                                    $latest_hash = $version['checksum'];
-                                    break;
+                            if (isset($channel_data['versions']) && is_array($channel_data['versions'])) {
+                                foreach ($channel_data['versions'] as $version) {
+                                    if ($version['version_code'] === $latest_code) {
+                                        $latest_hash = $version['checksum'] ?? '';
+                                        if (!empty($version['download_url'])) {
+                                            $download_url = $version['download_url'];
+                                        }
+                                        break;
+                                    }
                                 }
                             }
 
@@ -7285,14 +7297,15 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             set_env('last-update-version-name', $latest_name);
                             set_env('last-update-version-hash', $latest_hash);
                             set_env('last-update-version', $latest_code);
+                            set_env('last-update-download-url', $download_url);
 
-                            echo json_encode(['status' => 'true', 'title' => 'Update Available', 'message' => 'A new system update is available. Please update to get the latest features and improvements.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'true', 'title' => 'Update Available', 'message' => 'A new system update (' . $latest_name . ') is available on GitHub. Please update to get the latest features.', 'csrf_token' => $new_csrf_token]);
                         }else{
                             set_env('last-update-version-name', $current_name);
                             set_env('last-update-version-hash', $version_hash);
                             set_env('last-update-version', $current_code);
 
-                           echo json_encode(['status' => 'true', 'title' => 'System Up to Date', 'message' => 'Everything is up to date. No updates were found.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'true', 'title' => 'System Up to Date', 'message' => 'Everything is up to date. You are running the latest version (' . $current_name . ').', 'csrf_token' => $new_csrf_token]);
                         }
                     }
                 }else{
@@ -7323,7 +7336,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         }
 
                         if($update_available == true){
-                            $url = "https://updates.piprapay.com/download.php?version=$lasted_update_version";
+                            $download_url = get_env('last-update-download-url');
+                            if (empty($download_url) || $download_url === '--') {
+                                $download_url = "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip";
+                            }
 
                             $saveDir =  __DIR__ . '/../../pp-media/storage/updates/';
 
@@ -7334,14 +7350,16 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             $saveTo = $saveDir . $lasted_update_version . '.zip';
 
                             // Initialize curl
-                            $ch = curl_init($url);
+                            $ch = curl_init($download_url);
                             $fp = fopen($saveTo, 'w');
 
-                            curl_setopt($ch, CURLOPT_FILE, $fp);          // write to file
-                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // follow redirects
-                            curl_setopt($ch, CURLOPT_FAILONERROR, true);    // HTTP >= 400 will fail
-                            curl_setopt($ch, CURLOPT_TIMEOUT, 120);        // max 2 minutes
-                            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);  // connection timeout
+                            curl_setopt($ch, CURLOPT_FILE, $fp);
+                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                            curl_setopt($ch, CURLOPT_USERAGENT, 'PipraPay-Updater/3.0');
+                            curl_setopt($ch, CURLOPT_FAILONERROR, true);
+                            curl_setopt($ch, CURLOPT_TIMEOUT, 180);
+                            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
 
                             $success = curl_exec($ch);
                             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -7350,8 +7368,9 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             curl_close($ch);
                             fclose($fp);
 
-                            if (!$success || $httpCode >= 400) {
-                                echo json_encode(['status' => 'false', 'title' => 'Download Failed', 'message' => 'The latest update could not be downloaded. Please check your internet connection or try again later.', 'csrf_token' => $new_csrf_token]);
+                            if (!$success || $httpCode >= 400 || !file_exists($saveTo) || filesize($saveTo) < 1000) {
+                                @unlink($saveTo);
+                                echo json_encode(['status' => 'false', 'title' => 'Download Failed', 'message' => 'The latest update could not be downloaded from GitHub. Error: ' . ($error ?: "HTTP $httpCode"), 'csrf_token' => $new_csrf_token]);
                             }else{
                                 echo json_encode(['status' => 'true', 'title' => 'Update Downloaded', 'message' => 'The latest version has been downloaded successfully and is ready to be installed.', 'csrf_token' => $new_csrf_token]);
                             }
@@ -7395,9 +7414,11 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             $tempDir   = $storage . "temp/$lasted_update_version/";
                             $zipFile   = $storage . "updates/$lasted_update_version.zip";
 
-                            if (sha1_file($zipFile) !== $lasted_update_version_hash) {
-                                echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Update file checksum mismatch! Possible corruption or tampering.' , 'csrf_token' => $new_csrf_token]);
-                                exit();
+                            if (!empty($lasted_update_version_hash) && $lasted_update_version_hash !== '--') {
+                                if (sha1_file($zipFile) !== $lasted_update_version_hash) {
+                                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Update file checksum mismatch! Possible corruption or tampering.' , 'csrf_token' => $new_csrf_token]);
+                                    exit();
+                                }
                             }
 
                             @mkdir($backupDir, 0755, true);

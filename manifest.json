@@ -1,0 +1,34 @@
+{
+  "channels": {
+    "stable": {
+      "latest_version_name": "v3.0.0",
+      "latest_version_code": "3.0.0",
+      "release_notes": "PipraPay v3.0.0 official release with updated multi-gateway support, enhanced security, companion app sync, and modern UI.",
+      "release_date": "2026-09-14",
+      "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
+      "versions": [
+        {
+          "version_name": "v3.0.0",
+          "version_code": "3.0.0",
+          "checksum": "",
+          "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+        }
+      ]
+    },
+    "beta": {
+      "latest_version_name": "v3.0.0-beta",
+      "latest_version_code": "3.0.0",
+      "release_notes": "PipraPay v3.0.0-beta release with latest experimental fixes and enhancements.",
+      "release_date": "2026-09-14",
+      "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
+      "versions": [
+        {
+          "version_name": "v3.0.0-beta",
+          "version_code": "3.0.0",
+          "checksum": "",
+          "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+        }
+      ]
+    }
+  }
+}

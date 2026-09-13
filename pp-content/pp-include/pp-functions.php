@@ -1793,6 +1793,11 @@
 
             if ($entryNew === '') continue; // skip folder itself
 
+            // Protect sensitive files and directories from being overwritten
+            if ($entryNew === 'pp-config.php' || str_starts_with($entryNew, 'pp-media/storage/') || str_starts_with($entryNew, '.git')) {
+                continue;
+            }
+
             $targetPath = $destination . '/' . $entryNew;
 
             if (substr($entry, -1) === '/') { // folder
@@ -4009,3 +4014,44 @@
             $this->offset = null;
         }
     }
+
+    function pp_fetch_update_manifest() {
+        $urls = [
+            'https://raw.githubusercontent.com/samsusiyam/PipraPay/main/manifest.json',
+            'https://raw.githubusercontent.com/PipraPay/PipraPay/main/manifest.json'
+        ];
+
+        foreach ($urls as $url) {
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'PipraPay-Updater/3.0');
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && !empty($response)) {
+                    $decoded = json_decode($response, true);
+                    if (is_array($decoded) && isset($decoded['channels'])) {
+                        return $decoded;
+                    }
+                }
+            }
+        }
+
+        // Fallback to local manifest if available
+        $localPath = __DIR__ . '/../../manifest.json';
+        if (file_exists($localPath)) {
+            $localContent = file_get_contents($localPath);
+            $decoded = json_decode($localContent, true);
+            if (is_array($decoded) && isset($decoded['channels'])) {
+                return $decoded;
+            }
+        }
+
+        return null;
+    }
+
