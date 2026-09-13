@@ -526,37 +526,64 @@
                 <?php $support = $data['brand']['support'] ?? []; ?>
                 <div id="gateways-support" class="row g-3" style="display: none;">
                     <?php if(!empty($support['email']) && $support['email'] != '--'): ?>
-                        <div class="col-6">
+                        <div class="col-6 col-md-4">
                             <a href="mailto:<?php echo $support['email']?>" target="_blank" class="mp-support-card">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10" /><path d="M3 7l9 6l9 -6" /></svg>
-                                <div class="fw-semibold small"><?php echo $data['lang']['contact_email']?></div>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_email'] ?? 'Contact via Email'; ?></div>
                             </a>
                         </div>
                     <?php endif; ?>
 
                     <?php if(!empty($support['phone']) && $support['phone'] != '--'): ?>
-                        <div class="col-6">
+                        <div class="col-6 col-md-4">
                             <a href="tel:<?php echo $support['phone']?>" target="_blank" class="mp-support-card">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" /></svg>
-                                <div class="fw-semibold small"><?php echo $data['lang']['contact_phone']?></div>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_phone'] ?? 'Contact via Phone'; ?></div>
                             </a>
                         </div>
                     <?php endif; ?>
 
                     <?php if(!empty($support['whatsapp']) && $support['whatsapp'] != '--'): ?>
-                        <div class="col-6">
+                        <div class="col-6 col-md-4">
                             <a href="https://wa.me/<?php echo $support['whatsapp']?>" target="_blank" class="mp-support-card">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
-                                <div class="fw-semibold small"><?php echo $data['lang']['contact_whatsapp']?></div>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_whatsapp'] ?? 'Contact via WhatsApp'; ?></div>
                             </a>
                         </div>
                     <?php endif; ?>
 
                     <?php if(!empty($support['telegram']) && $support['telegram'] != '--'): ?>
-                        <div class="col-6">
+                        <div class="col-6 col-md-4">
                             <a href="<?php echo $support['telegram']?>" target="_blank" class="mp-support-card">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4" /></svg>
-                                <div class="fw-semibold small"><?php echo $data['lang']['contact_telegram']?></div>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_telegram'] ?? 'Contact via Telegram'; ?></div>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if(!empty($support['website']) && $support['website'] != '--'): ?>
+                        <div class="col-6 col-md-4">
+                            <a href="<?php echo $support['website']?>" target="_blank" class="mp-support-card">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M19.5 7a9 9 0 0 0 -7.5 -4a8.991 8.991 0 0 0 -7.484 4" /><path d="M11.5 3a16.989 16.989 0 0 0 -1.826 4" /><path d="M12.5 3a16.989 16.989 0 0 1 1.828 4" /><path d="M19.5 17a9 9 0 0 1 -7.5 4a8.991 8.991 0 0 1 -7.484 -4" /><path d="M11.5 21a16.989 16.989 0 0 1 -1.826 -4" /><path d="M12.5 21a16.989 16.989 0 0 0 1.828 -4" /><path d="M2 10l1 4l1.5 -4l1.5 4l1 -4" /><path d="M17 10l1 4l1.5 -4l1.5 4l1 -4" /><path d="M9.5 10l1 4l1.5 -4l1.5 4l1 -4" /></svg>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_website'] ?? 'Contact via Website'; ?></div>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if(!empty($support['messenger']) && $support['messenger'] != '--'): ?>
+                        <div class="col-6 col-md-4">
+                            <a href="<?php echo $support['messenger']?>" target="_blank" class="mp-support-card">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 20l1.3 -3.9a9 8 0 1 1 3.4 2.9l-4.7 1" /><path d="M8 13l3 -2l2 2l3 -2" /></svg>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_messenger'] ?? 'Contact via Messenger'; ?></div>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if(!empty($support['fb_page']) && $support['fb_page'] != '--'): ?>
+                        <div class="col-6 col-md-4">
+                            <a href="<?php echo $support['fb_page']?>" target="_blank" class="mp-support-card">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3" /></svg>
+                                <div class="fw-semibold small"><?php echo $data['lang']['contact_fb_page'] ?? 'Contact via Facebook'; ?></div>
                             </a>
                         </div>
                     <?php endif; ?>
@@ -564,26 +591,26 @@
 
                 <!-- Transaction Details Tab -->
                 <div id="gateways-details" style="display: none;">
-                    <ul class="list-unstyled mp-info-list mb-0">
-                        <li>
-                            <span class="text-muted"><?php echo $data['lang']['currency']?></span>
-                            <span class="fw-bold"><?php echo htmlspecialchars($data['transaction']['currency']); ?></span>
-                        </li>
-                        <li>
-                            <span class="text-muted"><?php echo $data['lang']['subtotal']?></span>
-                            <span class="fw-semibold"><?php echo money_round(($data['transaction']['amount'] ?? 0) - ($data['transaction']['discount_amount'] ?? 0), 2) . ' ' . $data['transaction']['currency']; ?></span>
-                        </li>
-                        <?php if(!empty($data['transaction']['discount_amount']) && $data['transaction']['discount_amount'] > 0): ?>
-                        <li>
-                            <span class="text-muted"><?php echo $data['lang']['discount']?></span>
-                            <span class="text-success fw-semibold">-<?php echo money_round($data['transaction']['discount_amount'], 2) . ' ' . $data['transaction']['currency']; ?></span>
-                        </li>
-                        <?php endif; ?>
-                        <li>
-                            <span class="text-muted"><?php echo $data['lang']['total']?></span>
-                            <span class="fw-bold" style="color: var(--mp-primary);"><?php echo money_round($data['transaction']['amount'], 2) . ' ' . $data['transaction']['currency']; ?></span>
-                        </li>
-                    </ul>
+                    <div class="card p-3 border rounded-3 mb-0" style="background: #ffffff;">
+                        <ul class="list-unstyled mp-info-list mb-0">
+                            <li>
+                                <span class="text-muted"><?php echo $data['lang']['currency']?></span>
+                                <span class="fw-bold"><?php echo htmlspecialchars($data['transaction']['currency']); ?></span>
+                            </li>
+                            <li>
+                                <span class="text-muted"><?php echo $data['lang']['subtotal']?></span>
+                                <span class="fw-semibold"><?php echo money_round(($data['transaction']['amount'] ?? 0) - ($data['transaction']['discount_amount'] ?? 0), 2) . ' ' . $data['transaction']['currency']; ?></span>
+                            </li>
+                            <li>
+                                <span class="text-muted"><?php echo $data['lang']['discount']?></span>
+                                <span class="fw-semibold"><?php echo money_round($data['transaction']['discount_amount'] ?? 0, 2) . ' ' . $data['transaction']['currency']; ?></span>
+                            </li>
+                            <li>
+                                <span class="text-muted"><?php echo $data['lang']['total']?></span>
+                                <span class="fw-bold" style="color: var(--mp-primary);"><?php echo money_round($data['transaction']['amount'], 2) . ' ' . $data['transaction']['currency']; ?></span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <!-- FAQ Tab -->
@@ -612,15 +639,9 @@
                     </div>
                 </div>
 
-                <!-- Amount Payable Banner -->
-                <div class="mp-amount-banner">
-                    <div>
-                        <div class="mp-amount-label"><?php echo $data['lang']['total']?></div>
-                        <div class="small opacity-75"><?php echo $data['transaction']['currency'];?></div>
-                    </div>
-                    <div class="mp-amount-val">
-                        <?php echo money_round($data['transaction']['amount'], 2); ?> <span style="font-size: 0.9rem; font-weight: 600;"><?php echo $data['transaction']['currency'];?></span>
-                    </div>
+                <!-- Total Summary Bar -->
+                <div class="text-center mt-3 py-2 px-3 rounded-pill" style="background-color:<?php echo pp_hexToRgba($primaryColor, 0.08);?>;color:<?php echo $primaryColor;?>;font-weight:700;font-size:0.95rem;letter-spacing:0.2px;border:1px solid <?php echo pp_hexToRgba($primaryColor, 0.15);?>;">
+                    <?php echo $data['lang']['total'] ?? 'Total'; ?>: <?php echo money_round($data['transaction']['amount'], 2) . ' ' . $data['transaction']['currency'];?>
                 </div>
 
             </div>
