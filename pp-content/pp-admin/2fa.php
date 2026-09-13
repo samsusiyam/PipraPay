@@ -106,20 +106,76 @@
     <script data-cfasync="false">
         document.addEventListener("DOMContentLoaded", function () {
             var inputs = document.querySelectorAll("[data-code-input]");
-            // Attach an event listener to each input element
+            if (inputs.length > 0) {
+                inputs[0].focus();
+            }
+
+            function fillFromPasted(text) {
+                var digits = text.replace(/\D/g, '');
+                if (!digits) return;
+                
+                for (var i = 0; i < inputs.length; i++) {
+                    if (i < digits.length) {
+                        inputs[i].value = digits[i];
+                    }
+                }
+                var focusIndex = Math.min(digits.length, inputs.length) - 1;
+                if (focusIndex >= 0 && focusIndex < inputs.length) {
+                    inputs[focusIndex].focus();
+                }
+
+                // If all 6 digits are filled, automatically submit
+                if (digits.length >= inputs.length) {
+                    $('.form-method').submit();
+                }
+            }
+
             for (let i = 0; i < inputs.length; i++) {
-            inputs[i].addEventListener("input", function (e) {
-                // If the input field has a character, and there is a next input field, focus it
-                if (e.target.value.length === e.target.maxLength && i + 1 < inputs.length) {
-                inputs[i + 1].focus();
-                }
-            });
-            inputs[i].addEventListener("keydown", function (e) {
-                // If the input field is empty and the keyCode for Backspace (8) is detected, and there is a previous input field, focus it
-                if (e.target.value.length === 0 && e.keyCode === 8 && i > 0) {
-                inputs[i - 1].focus();
-                }
-            });
+                // Handle paste event directly on each input
+                inputs[i].addEventListener("paste", function (e) {
+                    e.preventDefault();
+                    var pasteData = (e.clipboardData || window.clipboardData).getData('text');
+                    fillFromPasted(pasteData);
+                });
+
+                // Handle single digit input or mobile autofill
+                inputs[i].addEventListener("input", function (e) {
+                    var val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 1) {
+                        fillFromPasted(val);
+                        return;
+                    }
+                    e.target.value = val;
+                    if (val.length === 1 && i + 1 < inputs.length) {
+                        inputs[i + 1].focus();
+                    }
+
+                    // Check if all inputs are now filled
+                    var allFilled = Array.from(inputs).every(function (input) {
+                        return input.value.length === 1;
+                    });
+                    if (allFilled) {
+                        $('.form-method').submit();
+                    }
+                });
+
+                // Handle Backspace and Arrow key navigation
+                inputs[i].addEventListener("keydown", function (e) {
+                    if (e.key === "Backspace" || e.keyCode === 8) {
+                        if (e.target.value.length === 0 && i > 0) {
+                            inputs[i - 1].focus();
+                            inputs[i - 1].value = '';
+                        }
+                    } else if (e.key === "ArrowLeft" || e.keyCode === 37) {
+                        if (i > 0) {
+                            inputs[i - 1].focus();
+                        }
+                    } else if (e.key === "ArrowRight" || e.keyCode === 39) {
+                        if (i + 1 < inputs.length) {
+                            inputs[i + 1].focus();
+                        }
+                    }
+                });
             }
         });
 
