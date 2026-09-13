@@ -9470,10 +9470,11 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                                                                             insertData($db_prefix.'webhook_log', $columns, $values);
                                                                         }
+                                                                    if (!empty($all_transactions)) {
+                                                                        do_action('transactions.updated', $all_transactions);
                                                                     }
-                                                                }
 
-                                                                echo json_encode(['status' => "true", 'title' => 'Transaction Verified', 'message' => 'The Transaction ID has been successfully verified.']);
+                                                                    echo json_encode(['status' => "true", 'title' => 'Transaction Verified', 'message' => 'The Transaction ID has been successfully verified.']);
                                                             }else{
                                                                 echo json_encode(['status' => "false", 'title' => 'Transaction Not Found', 'message' => 'The Transaction ID you entered could not be verified. Please check the ID and try again after some time.']);
                                                             }

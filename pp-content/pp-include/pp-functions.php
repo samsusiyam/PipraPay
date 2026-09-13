@@ -4482,14 +4482,17 @@
         $customerName = $data['customer_name'] ?? ($data['name'] ?? 'Customer');
         $customerEmail = $data['customer_email'] ?? ($data['email'] ?? '');
         $customerPhone = $data['customer_phone'] ?? ($data['phone'] ?? '');
-        $invoiceId = $data['invoice_id'] ?? 'N/A';
+        $invoiceId = $data['invoice_id'] ?? ($data['pp_id'] ?? 'N/A');
         $siteName = get_env('brand-brand_name') ?: 'PipraPay';
         if ($siteName === '--') $siteName = 'PipraPay';
 
         // 1. Payment Success Event
         if ($event === 'payment.success') {
-            // Admin Alerts
-            if (get_env('notification_event_admin_payment_success_telegram') === 'yes') {
+            // Admin Alerts - Telegram
+            $tgToken = get_env('notification_telegram_token');
+            $tgChat = get_env('notification_telegram_chat_id');
+            $tgEvent = get_env('notification_event_admin_payment_success_telegram');
+            if (!empty($tgToken) && $tgToken !== '--' && !empty($tgChat) && $tgChat !== '--' && $tgEvent !== 'no') {
                 $tgMsg = "🎉 <b>Payment Received!</b>\n\n"
                        . "💰 <b>Amount:</b> {$amount} {$currency}\n"
                        . "💳 <b>Gateway:</b> {$gateway}\n"
@@ -4501,33 +4504,43 @@
                 pp_send_telegram($tgMsg);
             }
 
-            if (get_env('notification_event_admin_payment_success_discord') === 'yes') {
+            // Admin Alerts - Discord
+            $dcWebhook = get_env('notification_discord_webhook');
+            $dcEvent = get_env('notification_event_admin_payment_success_discord');
+            if (!empty($dcWebhook) && $dcWebhook !== '--' && $dcEvent !== 'no') {
                 $fields = [
                     ['name' => 'Amount', 'value' => "**{$amount} {$currency}**", 'inline' => true],
-                    ['name' => 'Gateway', 'value' => $gateway, 'inline' => true],
+                    ['name' => 'Gateway', 'value' => (string)$gateway, 'inline' => true],
                     ['name' => 'TrxID', 'value' => "`{$trxId}`", 'inline' => true],
-                    ['name' => 'Customer', 'value' => $customerName, 'inline' => true],
+                    ['name' => 'Customer', 'value' => (string)$customerName, 'inline' => true],
                     ['name' => 'Invoice ID', 'value' => "#{$invoiceId}", 'inline' => true]
                 ];
-                pp_send_discord("🎉 Payment Received - {$amount} {$currency}", "A new payment has been completed successfully.", $fields, 3066993);
+                pp_send_discord("🎉 Payment Received - {$amount} {$currency}", "A new payment has been completed successfully on {$siteName}.", $fields, 3066993);
             }
 
-            if (get_env('notification_event_admin_payment_success_whatsapp') === 'yes') {
-                $adminPhone = get_env('notification_whatsapp_target_phone');
-                if (!empty($adminPhone) && $adminPhone !== '--') {
-                    $waMsg = "🎉 *Payment Received!*\n\n"
-                           . "Amount: {$amount} {$currency}\n"
-                           . "Gateway: {$gateway}\n"
-                           . "TrxID: {$trxId}\n"
-                           . "Customer: {$customerName}\n"
-                           . "Invoice: #{$invoiceId}\n"
-                           . "Time: " . date('d M Y, h:i A');
-                    pp_send_whatsapp($adminPhone, $waMsg);
-                }
+            // Admin Alerts - WhatsApp
+            $waUrl = get_env('notification_whatsapp_api_url');
+            $waEvent = get_env('notification_event_admin_payment_success_whatsapp');
+            $adminPhone = get_env('notification_whatsapp_target_phone');
+            if (!empty($waUrl) && $waUrl !== '--' && !empty($adminPhone) && $adminPhone !== '--' && $waEvent !== 'no') {
+                $waMsg = "🎉 *Payment Received!*\n\n"
+                       . "Amount: {$amount} {$currency}\n"
+                       . "Gateway: {$gateway}\n"
+                       . "TrxID: {$trxId}\n"
+                       . "Customer: {$customerName}\n"
+                       . "Invoice: #{$invoiceId}\n"
+                       . "Time: " . date('d M Y, h:i A');
+                pp_send_whatsapp($adminPhone, $waMsg);
             }
 
-            if (get_env('notification_event_admin_payment_success_email') === 'yes') {
+            // Admin Alerts - Email (SMTP)
+            $smtpHost = get_env('notification_email_smtp_host');
+            $emEvent = get_env('notification_event_admin_payment_success_email');
+            if (!empty($smtpHost) && $smtpHost !== '--' && $emEvent !== 'no') {
                 $adminEmail = get_env('notification_email_admin_recipients');
+                if (empty($adminEmail) || $adminEmail === '--') {
+                    $adminEmail = get_env('notification_email_smtp_user');
+                }
                 if (!empty($adminEmail) && $adminEmail !== '--') {
                     $emails = array_map('trim', explode(',', $adminEmail));
                     $subject = "🎉 Payment Received: {$amount} {$currency} (TrxID: {$trxId})";
@@ -4554,8 +4567,8 @@
                 }
             }
 
-            // Customer Alerts
-            if (!empty($customerEmail) && get_env('notification_event_customer_payment_success_email') === 'yes') {
+            // Customer Alerts - Email
+            if (!empty($customerEmail) && filter_var($customerEmail, FILTER_VALIDATE_EMAIL) && get_env('notification_event_customer_payment_success_email') !== 'no') {
                 $subject = "Payment Receipt: {$amount} {$currency} - {$siteName}";
                 $html = "
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;'>
@@ -4579,7 +4592,9 @@
                 pp_send_email($customerEmail, $subject, $html);
             }
 
-            if (!empty($customerPhone) && get_env('notification_event_customer_payment_success_sms') === 'yes') {
+            // Customer Alerts - SMS
+            $smsUrl = get_env('notification_sms_api_url');
+            if (!empty($smsUrl) && $smsUrl !== '--' && !empty($customerPhone) && get_env('notification_event_customer_payment_success_sms') !== 'no') {
                 $smsMsg = "Thank you! Your payment of {$amount} {$currency} via {$gateway} (TrxID: {$trxId}) is successful. - {$siteName}";
                 pp_send_sms($customerPhone, $smsMsg);
             }
@@ -4589,7 +4604,9 @@
         if ($event === 'payment.failed') {
             $reason = $data['reason'] ?? 'Payment cancelled or verification failed.';
 
-            if (get_env('notification_event_admin_payment_failed_telegram') === 'yes') {
+            $tgToken = get_env('notification_telegram_token');
+            $tgChat = get_env('notification_telegram_chat_id');
+            if (!empty($tgToken) && $tgToken !== '--' && !empty($tgChat) && $tgChat !== '--' && get_env('notification_event_admin_payment_failed_telegram') === 'yes') {
                 $tgMsg = "❌ <b>Payment Failed / Cancelled</b>\n\n"
                        . "💰 <b>Amount:</b> {$amount} {$currency}\n"
                        . "💳 <b>Gateway:</b> {$gateway}\n"
@@ -4599,12 +4616,13 @@
                 pp_send_telegram($tgMsg);
             }
 
-            if (get_env('notification_event_admin_payment_failed_discord') === 'yes') {
+            $dcWebhook = get_env('notification_discord_webhook');
+            if (!empty($dcWebhook) && $dcWebhook !== '--' && get_env('notification_event_admin_payment_failed_discord') === 'yes') {
                 $fields = [
                     ['name' => 'Amount', 'value' => "{$amount} {$currency}", 'inline' => true],
-                    ['name' => 'Gateway', 'value' => $gateway, 'inline' => true],
-                    ['name' => 'Customer', 'value' => $customerName, 'inline' => true],
-                    ['name' => 'Reason', 'value' => $reason, 'inline' => false]
+                    ['name' => 'Gateway', 'value' => (string)$gateway, 'inline' => true],
+                    ['name' => 'Customer', 'value' => (string)$customerName, 'inline' => true],
+                    ['name' => 'Reason', 'value' => (string)$reason, 'inline' => false]
                 ];
                 pp_send_discord("❌ Payment Failed", "A payment attempt was cancelled or failed.", $fields, 15158332);
             }
@@ -4617,7 +4635,9 @@
             $simSlot = $data['sim_slot'] ?? 'SIM 1';
             $lastSeen = $data['last_seen'] ?? date('d M Y, h:i A');
 
-            if (get_env('notification_event_device_offline_telegram') === 'yes' || get_env('notification_event_device_offline_telegram') === '') {
+            $tgToken = get_env('notification_telegram_token');
+            $tgChat = get_env('notification_telegram_chat_id');
+            if (!empty($tgToken) && $tgToken !== '--' && !empty($tgChat) && $tgChat !== '--' && get_env('notification_event_device_offline_telegram') !== 'no') {
                 $tgMsg = "🚨 <b>DEVICE OFFLINE ALERT!</b>\n\n"
                        . "📱 <b>Device:</b> {$deviceName}\n"
                        . "🆔 <b>Device ID:</b> <code>{$deviceId}</code>\n"
@@ -4627,7 +4647,8 @@
                 pp_send_telegram($tgMsg);
             }
 
-            if (get_env('notification_event_device_offline_discord') === 'yes' || get_env('notification_event_device_offline_discord') === '') {
+            $dcWebhook = get_env('notification_discord_webhook');
+            if (!empty($dcWebhook) && $dcWebhook !== '--' && get_env('notification_event_device_offline_discord') !== 'no') {
                 $fields = [
                     ['name' => 'Device Name', 'value' => $deviceName, 'inline' => true],
                     ['name' => 'SIM Slot', 'value' => $simSlot, 'inline' => true],
@@ -4636,16 +4657,15 @@
                 pp_send_discord("🚨 Companion Device Offline", "Device `{$deviceId}` is no longer responding. SMS sync is paused.", $fields, 15105570);
             }
 
-            if (get_env('notification_event_device_offline_whatsapp') === 'yes') {
-                $adminPhone = get_env('notification_whatsapp_target_phone');
-                if (!empty($adminPhone) && $adminPhone !== '--') {
-                    $waMsg = "🚨 *DEVICE OFFLINE ALERT!*\n\n"
-                           . "Device: {$deviceName}\n"
-                           . "SIM: {$simSlot}\n"
-                           . "Last Seen: {$lastSeen}\n"
-                           . "Please check phone app!";
-                    pp_send_whatsapp($adminPhone, $waMsg);
-                }
+            $waUrl = get_env('notification_whatsapp_api_url');
+            $adminPhone = get_env('notification_whatsapp_target_phone');
+            if (!empty($waUrl) && $waUrl !== '--' && !empty($adminPhone) && $adminPhone !== '--' && get_env('notification_event_device_offline_whatsapp') !== 'no') {
+                $waMsg = "🚨 *DEVICE OFFLINE ALERT!*\n\n"
+                       . "Device: {$deviceName}\n"
+                       . "SIM: {$simSlot}\n"
+                       . "Last Seen: {$lastSeen}\n"
+                       . "Please check phone app!";
+                pp_send_whatsapp($adminPhone, $waMsg);
             }
         }
 
@@ -4654,7 +4674,9 @@
             $deviceName = $data['device_name'] ?? 'Companion Phone';
             $batteryLevel = $data['battery_level'] ?? '10%';
 
-            if (get_env('notification_event_device_battery_telegram') === 'yes') {
+            $tgToken = get_env('notification_telegram_token');
+            $tgChat = get_env('notification_telegram_chat_id');
+            if (!empty($tgToken) && $tgToken !== '--' && !empty($tgChat) && $tgChat !== '--' && get_env('notification_event_device_battery_telegram') !== 'no') {
                 $tgMsg = "🪫 <b>Low Battery Alert!</b>\n\n"
                        . "📱 <b>Device:</b> {$deviceName}\n"
                        . "🔋 <b>Battery Level:</b> {$batteryLevel}\n"
@@ -4662,7 +4684,8 @@
                 pp_send_telegram($tgMsg);
             }
 
-            if (get_env('notification_event_device_battery_discord') === 'yes') {
+            $dcWebhook = get_env('notification_discord_webhook');
+            if (!empty($dcWebhook) && $dcWebhook !== '--' && get_env('notification_event_device_battery_discord') !== 'no') {
                 $fields = [
                     ['name' => 'Device', 'value' => $deviceName, 'inline' => true],
                     ['name' => 'Battery Level', 'value' => "**{$batteryLevel}**", 'inline' => true]
@@ -4671,5 +4694,40 @@
             }
         }
     }
+
+    // Register Automatic Multi-Channel Notification Hook for Transaction Events
+    add_action('transactions.updated', function ($transactions) {
+        if (empty($transactions) || !is_array($transactions)) {
+            return;
+        }
+
+        foreach ($transactions as $trx) {
+            $status = strtolower($trx['status'] ?? '');
+            if ($status === 'completed' || $status === 'successful' || $status === 'success') {
+                pp_dispatch_notification('payment.success', [
+                    'amount'         => $trx['amount'] ?? ($trx['total'] ?? '0.00'),
+                    'currency'       => $trx['currency'] ?? 'BDT',
+                    'gateway'        => $trx['gateway'] ?? 'Payment Gateway',
+                    'trx_id'         => $trx['transaction_id'] ?? ($trx['pp_id'] ?? 'N/A'),
+                    'invoice_id'     => $trx['pp_id'] ?? 'N/A',
+                    'customer_name'  => $trx['full_name'] ?? 'Customer',
+                    'customer_email' => $trx['email_address'] ?? '',
+                    'customer_phone' => $trx['mobile_number'] ?? ($trx['sender'] ?? '')
+                ]);
+            } elseif ($status === 'canceled' || $status === 'cancelled' || $status === 'failed') {
+                pp_dispatch_notification('payment.failed', [
+                    'amount'         => $trx['amount'] ?? ($trx['total'] ?? '0.00'),
+                    'currency'       => $trx['currency'] ?? 'BDT',
+                    'gateway'        => $trx['gateway'] ?? 'Payment Gateway',
+                    'trx_id'         => $trx['transaction_id'] ?? ($trx['pp_id'] ?? 'N/A'),
+                    'invoice_id'     => $trx['pp_id'] ?? 'N/A',
+                    'customer_name'  => $trx['full_name'] ?? 'Customer',
+                    'customer_email' => $trx['email_address'] ?? '',
+                    'customer_phone' => $trx['mobile_number'] ?? ($trx['sender'] ?? ''),
+                    'reason'         => 'Transaction was ' . $status
+                ]);
+            }
+        }
+    });
 
 
