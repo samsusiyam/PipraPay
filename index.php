@@ -2061,6 +2061,28 @@
                                 }
                                 //webhook pending
                                 //webhook pending
+                                                                // Device Offline Monitor Check
+                                $offlineDevices = json_decode(getData($db_prefix.'device', 'WHERE status = "used"'), true);
+                                if (!empty($offlineDevices['response'])) {
+                                    $now = time();
+                                    foreach ($offlineDevices['response'] as $dev) {
+                                        $lastSyncTime = !empty($dev['last_sync']) ? strtotime($dev['last_sync']) : strtotime($dev['updated_date']);
+                                        if (($now - $lastSyncTime) > 900) {
+                                            $lastAlertKey = 'dev_offline_alert_' . ($dev['device_id'] ?? $dev['id']);
+                                            $lastAlert = intval(get_env($lastAlertKey) ?: 0);
+                                            if (($now - $lastAlert) > 7200) {
+                                                set_env($lastAlertKey, (string)$now);
+                                                pp_dispatch_notification('device.offline', [
+                                                    'device_name' => ($dev['name'] ?: $dev['model']) ?: 'Companion Device',
+                                                    'device_id'   => $dev['device_id'] ?? 'N/A',
+                                                    'sim_slot'    => 'SIM Slot',
+                                                    'last_seen'   => !empty($dev['last_sync']) ? $dev['last_sync'] : $dev['updated_date']
+                                                ]);
+                                            }
+                                        }
+                                    }
+                                }
+
                                 unlink($lockFile);
                             }else{
                                 if(file_exists(__DIR__ . '/pp-404.php')){

@@ -7569,6 +7569,185 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                 }
             }
 
+            if($action == "system-settings-notification-save"){
+                if($global_user_login == true){
+                    if (!empty($pp_demo_mode)) {
+                        echo json_encode(['status' => "false", 'title' => 'Demo Restriction', 'message' => 'This feature is disabled in the demo version.', 'csrf_token' => $new_csrf_token]);
+                    }else{
+                        if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', $global_user_response['response'][0]['role'])) {
+                            echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action. Please contact the admin.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        if (!hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_notification', $global_user_response['response'][0]['role'])) {
+                            echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action. Please contact the admin.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        $fields = [
+                            // Telegram
+                            'notification_telegram_token',
+                            'notification_telegram_chat_id',
+                            'notification_telegram_topic_id',
+                            // Discord
+                            'notification_discord_webhook',
+                            'notification_discord_bot_name',
+                            // WhatsApp
+                            'notification_whatsapp_api_url',
+                            'notification_whatsapp_api_key',
+                            'notification_whatsapp_sender',
+                            'notification_whatsapp_target_phone',
+                            // Email
+                            'notification_email_smtp_host',
+                            'notification_email_smtp_port',
+                            'notification_email_smtp_enc',
+                            'notification_email_smtp_user',
+                            'notification_email_smtp_pass',
+                            'notification_email_from_name',
+                            'notification_email_from',
+                            'notification_email_admin_recipients',
+                            // SMS
+                            'notification_sms_api_url',
+                            'notification_sms_api_key',
+                            'notification_sms_sender_id',
+                            // Event Switches
+                            'notification_event_admin_payment_success_telegram',
+                            'notification_event_admin_payment_success_discord',
+                            'notification_event_admin_payment_success_whatsapp',
+                            'notification_event_admin_payment_success_email',
+                            'notification_event_admin_payment_failed_telegram',
+                            'notification_event_admin_payment_failed_discord',
+                            'notification_event_device_offline_telegram',
+                            'notification_event_device_offline_discord',
+                            'notification_event_device_offline_whatsapp',
+                            'notification_event_device_battery_telegram',
+                            'notification_event_device_battery_discord',
+                            'notification_event_customer_payment_success_email',
+                            'notification_event_customer_payment_success_sms'
+                        ];
+
+                        foreach ($fields as $field) {
+                            if (isset($_POST[$field])) {
+                                set_env($field, escape_string($_POST[$field]));
+                            }
+                        }
+
+                        echo json_encode(['status' => 'true', 'title' => 'Settings Saved', 'message' => 'Notification settings and routing rules have been updated successfully.', 'csrf_token' => $new_csrf_token]);
+                    }
+                }else{
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request', 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
+            if($action == "system-settings-notification-test"){
+                if($global_user_login == true){
+                    if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', $global_user_response['response'][0]['role'])) {
+                        echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action. Please contact the admin.', 'csrf_token' => $new_csrf_token]);
+                        exit();
+                    }
+
+                    if (!hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_notification', $global_user_response['response'][0]['role'])) {
+                        echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action. Please contact the admin.', 'csrf_token' => $new_csrf_token]);
+                        exit();
+                    }
+
+                    $channel = escape_string($_POST['channel'] ?? '');
+                    $siteName = get_env('geneal-brand-settings-title') ?: 'PipraPay';
+
+                    if ($channel === 'telegram') {
+                        $token = get_env('notification_telegram_token');
+                        $chatId = get_env('notification_telegram_chat_id');
+                        if (empty($token) || empty($chatId)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your Telegram Bot Token and Chat ID first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        $msg = "⚡ <b>PipraPay Test Notification</b>\n\n"
+                             . "✅ Your Telegram Bot notification system is working perfectly!\n"
+                             . "🕒 <b>Time:</b> " . date('Y-m-d H:i:s') . "\n"
+                             . "🌐 <b>Platform:</b> {$siteName}";
+                        $res = pp_send_telegram($msg);
+                        if (!empty($res['ok'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'Telegram Alert Sent', 'message' => 'Test notification sent to Telegram successfully!', 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            $err = $res['description'] ?? 'Telegram API error. Please check your Bot Token and Chat ID.';
+                            echo json_encode(['status' => 'false', 'title' => 'Telegram Error', 'message' => $err, 'csrf_token' => $new_csrf_token]);
+                        }
+                    } elseif ($channel === 'discord') {
+                        $webhook = get_env('notification_discord_webhook');
+                        if (empty($webhook)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your Discord Webhook URL first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        $fields = [
+                            ['name' => 'Status', 'value' => '✅ Connected & Verified', 'inline' => true],
+                            ['name' => 'Platform', 'value' => $siteName, 'inline' => true],
+                            ['name' => 'Timestamp', 'value' => date('Y-m-d H:i:s'), 'inline' => false]
+                        ];
+                        $res = pp_send_discord("🔔 Discord Test Alert", "Your Discord webhook integration for **{$siteName}** is working properly.", $fields, 5793266);
+                        if (!empty($res['success'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'Discord Alert Sent', 'message' => 'Test embed notification posted to Discord successfully!', 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            echo json_encode(['status' => 'false', 'title' => 'Discord Error', 'message' => 'Failed to send to Discord webhook (HTTP code: ' . ($res['code'] ?? '0') . '). Check webhook URL.', 'csrf_token' => $new_csrf_token]);
+                        }
+                    } elseif ($channel === 'whatsapp') {
+                        $targetPhone = get_env('notification_whatsapp_target_phone');
+                        $apiUrl = get_env('notification_whatsapp_api_url');
+                        if (empty($apiUrl) || empty($targetPhone)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your WhatsApp API Endpoint URL and Target Phone number first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        $msg = "⚡ *PipraPay WhatsApp Test Notification*\n\nYour WhatsApp alert integration on {$siteName} is working properly!\nTime: " . date('Y-m-d H:i:s');
+                        $res = pp_send_whatsapp($targetPhone, $msg);
+                        if (!empty($res['success'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'WhatsApp Alert Sent', 'message' => 'Test message sent to WhatsApp successfully!', 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            echo json_encode(['status' => 'false', 'title' => 'WhatsApp Error', 'message' => 'WhatsApp API error (HTTP code: ' . ($res['code'] ?? '0') . '). Verify your endpoint & API key.', 'csrf_token' => $new_csrf_token]);
+                        }
+                    } elseif ($channel === 'email') {
+                        $adminEmail = get_env('notification_email_admin_recipients') ?: ($global_user_response['response'][0]['email'] ?? '');
+                        if (empty($adminEmail)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Email', 'message' => 'Please configure Admin Notification Email or update your account email first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        $firstEmail = trim(explode(',', $adminEmail)[0]);
+                        $subject = "⚡ PipraPay SMTP Test Email";
+                        $html = "<div style='font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
+                            <h2 style='color: #4f46e5; margin-top: 0;'>SMTP Email Integration Verified</h2>
+                            <p>This is a test email confirming your SMTP server settings on <strong>{$siteName}</strong> are working correctly.</p>
+                            <p style='color: #64748b; font-size: 13px;'>Sent at: " . date('Y-m-d H:i:s') . "</p>
+                        </div>";
+                        $res = pp_send_email($firstEmail, $subject, $html);
+                        if ($res) {
+                            echo json_encode(['status' => 'true', 'title' => 'Email Sent', 'message' => "Test email dispatched to {$firstEmail} successfully!", 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            echo json_encode(['status' => 'false', 'title' => 'SMTP Error', 'message' => 'Failed to send test email. Please check your SMTP host, port, credentials, and encryption.', 'csrf_token' => $new_csrf_token]);
+                        }
+                    } elseif ($channel === 'sms') {
+                        $smsUrl = get_env('notification_sms_api_url');
+                        $targetPhone = get_env('notification_whatsapp_target_phone') ?: ($global_user_response['response'][0]['phone'] ?? '');
+                        if (empty($smsUrl)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your SMS Gateway HTTP API URL first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        if (empty($targetPhone)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Target Number', 'message' => 'Please configure a target phone number in WhatsApp tab or user profile to receive test SMS.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        $msg = "PipraPay SMS Test Alert: SMS gateway integration is working properly on {$siteName}.";
+                        $res = pp_send_sms($targetPhone, $msg);
+                        if (!empty($res['success'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'SMS Dispatched', 'message' => "Test SMS dispatched to {$targetPhone} (HTTP {$res['code']}).", 'csrf_token' => $new_csrf_token]);
+                        } else {
+                            echo json_encode(['status' => 'false', 'title' => 'SMS Error', 'message' => 'Failed to dispatch SMS (HTTP ' . ($res['code'] ?? '0') . '). Verify API URL & token.', 'csrf_token' => $new_csrf_token]);
+                        }
+                    } else {
+                        echo json_encode(['status' => 'false', 'title' => 'Invalid Channel', 'message' => 'Unknown notification channel.', 'csrf_token' => $new_csrf_token]);
+                    }
+                }else{
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request', 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
             if($action == "gateway-create"){
                 if($global_user_login == true){
                     if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'gateways', $global_user_response['response'][0]['role'])) {

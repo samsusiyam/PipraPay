@@ -1367,7 +1367,8 @@
                     'manage_general' => true,
                     'manage_cron' => true,
                     'manage_update'   => true,
-                    'manage_import'   => true
+                    'manage_import'   => true,
+                    'manage_notification' => true
                 ],
             ],
             'pages' => [
@@ -1933,6 +1934,16 @@
                 $condition = 'id ="'.$response_transaciton['response'][0]['id'].'"'; 
 
                 updateData($db_prefix.'transaction', $columns, $values, $condition);
+
+                pp_dispatch_notification('payment.failed', [
+                    'amount'        => money_round($response_transaciton['response'][0]['amount'] ?? 0),
+                    'currency'      => $response_transaciton['response'][0]['currency'] ?? 'BDT',
+                    'gateway'       => $response_transaciton['response'][0]['gateway_id'] ?? 'Payment',
+                    'trx_id'        => $response_transaciton['response'][0]['ref'] ?? '',
+                    'invoice_id'    => $response_transaciton['response'][0]['ref'] ?? '',
+                    'customer_name' => 'Customer',
+                    'reason'        => 'Transaction was marked as cancelled.'
+                ]);
                                                                 
                 return true;
             }
@@ -2104,6 +2115,18 @@
                 if (!empty($all_transactions)) {
                     do_action('transactions.updated', $all_transactions);
                 }
+
+                pp_dispatch_notification('payment.success', [
+                    'amount'         => money_round($net),
+                    'currency'       => $response_transaction['response'][0]['currency'] ?? 'BDT',
+                    'gateway'        => $gateway,
+                    'trx_id'         => $response_transaction['response'][0]['trx_id'] ?? '',
+                    'invoice_id'     => $response_transaction['response'][0]['ref'] ?? '',
+                    'customer_name'  => $customer_info['name'] ?? 'Customer',
+                    'customer_email' => $customer_info['email'] ?? '',
+                    'customer_phone' => $customer_info['mobile'] ?? '',
+                    'brand_name'     => $response_brand['response'][0]['brand_name'] ?? ''
+                ]);
 
                 return true;
             }
@@ -4054,4 +4077,491 @@
 
         return null;
     }
+
+    /* =========================================================================
+     * PIPRAPAY UNIFIED NOTIFICATION & ALERT ENGINE (Telegram, Discord, WhatsApp, Email, SMS)
+     * ========================================================================= */
+
+    function pp_send_telegram($text, $chatId = null, $botToken = null, $topicId = null) {
+        $token = $botToken ?: get_env('notification_telegram_token');
+        $chat = $chatId ?: get_env('notification_telegram_chat_id');
+        $topic = $topicId ?: get_env('notification_telegram_topic_id');
+
+        if (empty($token) || $token === '--' || empty($chat) || $chat === '--') {
+            return ['status' => false, 'message' => 'Telegram token or chat ID not configured.'];
+        }
+
+        $url = "https://api.telegram.org/bot" . trim($token) . "/sendMessage";
+        $payload = [
+            'chat_id' => trim($chat),
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => false
+        ];
+
+        if (!empty($topic) && $topic !== '--') {
+            $payload['message_thread_id'] = trim($topic);
+        }
+
+        if (!function_exists('curl_init')) {
+            return ['status' => false, 'message' => 'cURL extension is required for Telegram.'];
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        $json = json_decode($res, true);
+        if ($httpCode === 200 && isset($json['ok']) && $json['ok'] == true) {
+            return ['status' => true, 'message' => 'Telegram message sent successfully.'];
+        }
+        return ['status' => false, 'message' => $json['description'] ?? ($err ?: "HTTP $httpCode")];
+    }
+
+    function pp_send_discord($title, $description, $fields = [], $color = 3066993, $webhookUrl = null) {
+        $url = $webhookUrl ?: get_env('notification_discord_webhook');
+        if (empty($url) || $url === '--') {
+            return ['status' => false, 'message' => 'Discord webhook URL not configured.'];
+        }
+
+        $botName = get_env('notification_discord_bot_name') ?: 'PipraPay Alerts';
+        if ($botName === '--') $botName = 'PipraPay Alerts';
+
+        $embed = [
+            'title' => $title,
+            'description' => $description,
+            'color' => $color,
+            'fields' => $fields,
+            'timestamp' => date('c'),
+            'footer' => [
+                'text' => 'PipraPay Notification Engine'
+            ]
+        ];
+
+        $payload = [
+            'username' => $botName,
+            'embeds' => [$embed]
+        ];
+
+        if (!function_exists('curl_init')) {
+            return ['status' => false, 'message' => 'cURL extension is required for Discord.'];
+        }
+
+        $ch = curl_init(trim($url));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return ['status' => true, 'message' => 'Discord notification sent successfully.'];
+        }
+        return ['status' => false, 'message' => $err ?: "Discord returned HTTP $httpCode: $res"];
+    }
+
+    function pp_send_whatsapp($phone, $message, $config = []) {
+        $apiUrl = $config['api_url'] ?? get_env('notification_whatsapp_api_url');
+        $apiKey = $config['api_key'] ?? get_env('notification_whatsapp_api_key');
+        $sender = $config['sender_id'] ?? get_env('notification_whatsapp_sender');
+
+        if (empty($apiUrl) || $apiUrl === '--') {
+            return ['status' => false, 'message' => 'WhatsApp API URL not configured.'];
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        $url = str_replace(['{phone}', '{message}', '{api_key}'], [urlencode($cleanPhone), urlencode($message), urlencode($apiKey)], $apiUrl);
+
+        if (!function_exists('curl_init')) {
+            return ['status' => false, 'message' => 'cURL extension is required.'];
+        }
+
+        $ch = curl_init();
+        if (strpos($apiUrl, '{phone}') !== false) {
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        } else {
+            curl_setopt($ch, CURLOPT_URL, $apiUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            $postData = [
+                'to' => $cleanPhone,
+                'phone' => $cleanPhone,
+                'number' => $cleanPhone,
+                'message' => $message,
+                'text' => $message,
+                'api_key' => $apiKey,
+                'token' => $apiKey,
+                'sender' => $sender
+            ];
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        }
+        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return ['status' => true, 'message' => 'WhatsApp message sent successfully.'];
+        }
+        return ['status' => false, 'message' => $err ?: "WhatsApp API returned HTTP $httpCode: $res"];
+    }
+
+    function pp_send_email($to, $subject, $htmlBody, $config = []) {
+        $fromName = $config['from_name'] ?? (get_env('notification_email_from_name') ?: 'PipraPay');
+        $fromEmail = $config['from_email'] ?? (get_env('notification_email_from') ?: 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'piprapay.com'));
+        if ($fromName === '--') $fromName = 'PipraPay';
+        if ($fromEmail === '--') $fromEmail = 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'piprapay.com');
+
+        $smtpHost = $config['smtp_host'] ?? get_env('notification_email_smtp_host');
+        $smtpPort = $config['smtp_port'] ?? get_env('notification_email_smtp_port');
+        $smtpUser = $config['smtp_user'] ?? get_env('notification_email_smtp_user');
+        $smtpPass = $config['smtp_pass'] ?? get_env('notification_email_smtp_pass');
+        $smtpEnc  = $config['smtp_enc'] ?? get_env('notification_email_smtp_enc'); // ssl or tls
+
+        // Check if SMTP is configured
+        if (!empty($smtpHost) && $smtpHost !== '--' && !empty($smtpUser) && $smtpUser !== '--') {
+            try {
+                $port = (!empty($smtpPort) && $smtpPort !== '--') ? (int)$smtpPort : 587;
+                $scheme = ($smtpEnc === 'ssl' || $port === 465) ? 'ssl://' : '';
+                $socket = @fsockopen($scheme . $smtpHost, $port, $errno, $errstr, 10);
+                if ($socket) {
+                    $read = function($sock) {
+                        $s = '';
+                        while ($line = fgets($sock, 515)) {
+                            $s .= $line;
+                            if (substr($line, 3, 1) === ' ') break;
+                        }
+                        return $s;
+                    };
+                    $write = function($sock, $cmd) {
+                        fputs($sock, $cmd . "\r\n");
+                    };
+
+                    $read($socket);
+                    $write($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+                    $read($socket);
+
+                    if ($smtpEnc === 'tls' || $port === 587) {
+                        $write($socket, "STARTTLS");
+                        $read($socket);
+                        stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                        $write($socket, "EHLO " . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+                        $read($socket);
+                    }
+
+                    $write($socket, "AUTH LOGIN");
+                    $read($socket);
+                    $write($socket, base64_encode($smtpUser));
+                    $read($socket);
+                    $write($socket, base64_encode($smtpPass));
+                    $authRes = $read($socket);
+
+                    if (strpos($authRes, '235') !== false) {
+                        $write($socket, "MAIL FROM: <$fromEmail>");
+                        $read($socket);
+                        $write($socket, "RCPT TO: <$to>");
+                        $read($socket);
+                        $write($socket, "DATA");
+                        $read($socket);
+
+                        $headers = "MIME-Version: 1.0\r\n";
+                        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+                        $headers .= "From: $fromName <$fromEmail>\r\n";
+                        $headers .= "To: <$to>\r\n";
+                        $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+                        $headers .= "Date: " . date('r') . "\r\n";
+
+                        $write($socket, $headers . "\r\n" . $htmlBody . "\r\n.");
+                        $dataRes = $read($socket);
+                        $write($socket, "QUIT");
+                        fclose($socket);
+
+                        return ['status' => true, 'message' => 'Email sent successfully via SMTP.'];
+                    }
+                    fclose($socket);
+                }
+            } catch (Throwable $e) {
+                // fallback to mail()
+            }
+        }
+
+        // Fallback to PHP native mail()
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: $fromName <$fromEmail>\r\n";
+        $headers .= "Reply-To: $fromEmail\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+
+        $sent = @mail($to, $subject, $htmlBody, $headers);
+        if ($sent) {
+            return ['status' => true, 'message' => 'Email sent successfully.'];
+        }
+        return ['status' => false, 'message' => 'Failed to send email. Check server mail/SMTP settings.'];
+    }
+
+    function pp_send_sms($to, $message, $config = []) {
+        $gatewayUrl = $config['api_url'] ?? get_env('notification_sms_api_url');
+        $apiKey     = $config['api_key'] ?? get_env('notification_sms_api_key');
+        $senderId   = $config['sender_id'] ?? get_env('notification_sms_sender_id');
+
+        if (empty($gatewayUrl) || $gatewayUrl === '--') {
+            return ['status' => false, 'message' => 'SMS Gateway API URL not configured.'];
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', $to);
+        $url = str_replace(
+            ['{to}', '{phone}', '{number}', '{message}', '{api_key}', '{sender_id}'],
+            [urlencode($cleanPhone), urlencode($cleanPhone), urlencode($cleanPhone), urlencode($message), urlencode($apiKey), urlencode($senderId)],
+            $gatewayUrl
+        );
+
+        if (!function_exists('curl_init')) {
+            return ['status' => false, 'message' => 'cURL extension is required.'];
+        }
+
+        $ch = curl_init();
+        if (strpos($gatewayUrl, '{to}') !== false || strpos($gatewayUrl, '{phone}') !== false) {
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        } else {
+            curl_setopt($ch, CURLOPT_URL, $gatewayUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            $postData = [
+                'api_key'   => $apiKey,
+                'to'        => $cleanPhone,
+                'number'    => $cleanPhone,
+                'message'   => $message,
+                'sender_id' => $senderId
+            ];
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+        }
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        $res = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return ['status' => true, 'message' => 'SMS sent successfully.'];
+        }
+        return ['status' => false, 'message' => $err ?: "SMS API returned HTTP $httpCode: $res"];
+    }
+
+    function pp_dispatch_notification($event, $data = []) {
+        $currency = $data['currency'] ?? 'BDT';
+        $amount = $data['amount'] ?? '0.00';
+        $trxId = $data['trx_id'] ?? ($data['transaction_id'] ?? 'N/A');
+        $gateway = $data['gateway'] ?? ($data['payment_method'] ?? 'PipraPay');
+        $customerName = $data['customer_name'] ?? ($data['name'] ?? 'Customer');
+        $customerEmail = $data['customer_email'] ?? ($data['email'] ?? '');
+        $customerPhone = $data['customer_phone'] ?? ($data['phone'] ?? '');
+        $invoiceId = $data['invoice_id'] ?? 'N/A';
+        $siteName = get_env('brand-brand_name') ?: 'PipraPay';
+        if ($siteName === '--') $siteName = 'PipraPay';
+
+        // 1. Payment Success Event
+        if ($event === 'payment.success') {
+            // Admin Alerts
+            if (get_env('notification_event_admin_payment_success_telegram') === 'yes') {
+                $tgMsg = "🎉 <b>Payment Received!</b>\n\n"
+                       . "💰 <b>Amount:</b> {$amount} {$currency}\n"
+                       . "💳 <b>Gateway:</b> {$gateway}\n"
+                       . "🆔 <b>TrxID:</b> <code>{$trxId}</code>\n"
+                       . "👤 <b>Customer:</b> {$customerName}\n"
+                       . "📄 <b>Invoice:</b> #{$invoiceId}\n"
+                       . "⏰ <b>Time:</b> " . date('d M Y, h:i A') . "\n\n"
+                       . "🌐 <i>{$siteName} Payment Engine</i>";
+                pp_send_telegram($tgMsg);
+            }
+
+            if (get_env('notification_event_admin_payment_success_discord') === 'yes') {
+                $fields = [
+                    ['name' => 'Amount', 'value' => "**{$amount} {$currency}**", 'inline' => true],
+                    ['name' => 'Gateway', 'value' => $gateway, 'inline' => true],
+                    ['name' => 'TrxID', 'value' => "`{$trxId}`", 'inline' => true],
+                    ['name' => 'Customer', 'value' => $customerName, 'inline' => true],
+                    ['name' => 'Invoice ID', 'value' => "#{$invoiceId}", 'inline' => true]
+                ];
+                pp_send_discord("🎉 Payment Received - {$amount} {$currency}", "A new payment has been completed successfully.", $fields, 3066993);
+            }
+
+            if (get_env('notification_event_admin_payment_success_whatsapp') === 'yes') {
+                $adminPhone = get_env('notification_whatsapp_target_phone');
+                if (!empty($adminPhone) && $adminPhone !== '--') {
+                    $waMsg = "🎉 *Payment Received!*\n\n"
+                           . "Amount: {$amount} {$currency}\n"
+                           . "Gateway: {$gateway}\n"
+                           . "TrxID: {$trxId}\n"
+                           . "Customer: {$customerName}\n"
+                           . "Invoice: #{$invoiceId}\n"
+                           . "Time: " . date('d M Y, h:i A');
+                    pp_send_whatsapp($adminPhone, $waMsg);
+                }
+            }
+
+            if (get_env('notification_event_admin_payment_success_email') === 'yes') {
+                $adminEmail = get_env('notification_email_admin_recipients');
+                if (!empty($adminEmail) && $adminEmail !== '--') {
+                    $emails = array_map('trim', explode(',', $adminEmail));
+                    $subject = "🎉 Payment Received: {$amount} {$currency} (TrxID: {$trxId})";
+                    $html = "
+                    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;'>
+                        <h2 style='color: #2fb344; margin-top: 0;'>🎉 Payment Received Successfully</h2>
+                        <p>A new payment has been processed on <strong>{$siteName}</strong>.</p>
+                        <table style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
+                            <tr style='border-bottom: 1px solid #eee;'><td style='padding: 8px 0; color: #666;'>Amount:</td><td style='padding: 8px 0; font-weight: bold; font-size: 16px;'>{$amount} {$currency}</td></tr>
+                            <tr style='border-bottom: 1px solid #eee;'><td style='padding: 8px 0; color: #666;'>Payment Method:</td><td style='padding: 8px 0;'>{$gateway}</td></tr>
+                            <tr style='border-bottom: 1px solid #eee;'><td style='padding: 8px 0; color: #666;'>Transaction ID:</td><td style='padding: 8px 0; font-family: monospace;'>{$trxId}</td></tr>
+                            <tr style='border-bottom: 1px solid #eee;'><td style='padding: 8px 0; color: #666;'>Customer Name:</td><td style='padding: 8px 0;'>{$customerName}</td></tr>
+                            <tr style='border-bottom: 1px solid #eee;'><td style='padding: 8px 0; color: #666;'>Invoice Number:</td><td style='padding: 8px 0;'>#{$invoiceId}</td></tr>
+                            <tr><td style='padding: 8px 0; color: #666;'>Date:</td><td style='padding: 8px 0;'>" . date('d M Y, h:i A') . "</td></tr>
+                        </table>
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                        <p style='color: #888; font-size: 12px; margin-bottom: 0;'>This is an automated notification from {$siteName}.</p>
+                    </div>";
+                    foreach ($emails as $em) {
+                        if (filter_var($em, FILTER_VALIDATE_EMAIL)) {
+                            pp_send_email($em, $subject, $html);
+                        }
+                    }
+                }
+            }
+
+            // Customer Alerts
+            if (!empty($customerEmail) && get_env('notification_event_customer_payment_success_email') === 'yes') {
+                $subject = "Payment Receipt: {$amount} {$currency} - {$siteName}";
+                $html = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <h2 style='color: #16a34a; margin: 0;'>Payment Receipt</h2>
+                        <p style='color: #6b7280; font-size: 14px; margin-top: 5px;'>Thank you for your payment!</p>
+                    </div>
+                    <div style='background: #f9fafb; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px;'>
+                        <div style='font-size: 28px; font-weight: bold; color: #111827; text-align: center;'>{$amount} {$currency}</div>
+                        <div style='text-align: center; color: #16a34a; font-size: 14px; font-weight: 500; margin-top: 4px;'>✓ Completed</div>
+                    </div>
+                    <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
+                        <tr style='border-bottom: 1px solid #f3f4f6;'><td style='padding: 10px 0; color: #6b7280;'>Transaction ID</td><td style='padding: 10px 0; text-align: right; font-family: monospace; font-weight: bold;'>{$trxId}</td></tr>
+                        <tr style='border-bottom: 1px solid #f3f4f6;'><td style='padding: 10px 0; color: #6b7280;'>Payment Method</td><td style='padding: 10px 0; text-align: right;'>{$gateway}</td></tr>
+                        <tr style='border-bottom: 1px solid #f3f4f6;'><td style='padding: 10px 0; color: #6b7280;'>Invoice No.</td><td style='padding: 10px 0; text-align: right;'>#{$invoiceId}</td></tr>
+                        <tr><td style='padding: 10px 0; color: #6b7280;'>Date & Time</td><td style='padding: 10px 0; text-align: right;'>" . date('d M Y, h:i A') . "</td></tr>
+                    </table>
+                    <hr style='border: none; border-top: 1px solid #e5e7eb; margin: 25px 0;'>
+                    <p style='color: #9ca3af; font-size: 12px; text-align: center; margin: 0;'>If you have any questions, please contact support.</p>
+                </div>";
+                pp_send_email($customerEmail, $subject, $html);
+            }
+
+            if (!empty($customerPhone) && get_env('notification_event_customer_payment_success_sms') === 'yes') {
+                $smsMsg = "Thank you! Your payment of {$amount} {$currency} via {$gateway} (TrxID: {$trxId}) is successful. - {$siteName}";
+                pp_send_sms($customerPhone, $smsMsg);
+            }
+        }
+
+        // 2. Payment Failed Event
+        if ($event === 'payment.failed') {
+            $reason = $data['reason'] ?? 'Payment cancelled or verification failed.';
+
+            if (get_env('notification_event_admin_payment_failed_telegram') === 'yes') {
+                $tgMsg = "❌ <b>Payment Failed / Cancelled</b>\n\n"
+                       . "💰 <b>Amount:</b> {$amount} {$currency}\n"
+                       . "💳 <b>Gateway:</b> {$gateway}\n"
+                       . "👤 <b>Customer:</b> {$customerName}\n"
+                       . "⚠️ <b>Reason:</b> {$reason}\n"
+                       . "⏰ <b>Time:</b> " . date('d M Y, h:i A');
+                pp_send_telegram($tgMsg);
+            }
+
+            if (get_env('notification_event_admin_payment_failed_discord') === 'yes') {
+                $fields = [
+                    ['name' => 'Amount', 'value' => "{$amount} {$currency}", 'inline' => true],
+                    ['name' => 'Gateway', 'value' => $gateway, 'inline' => true],
+                    ['name' => 'Customer', 'value' => $customerName, 'inline' => true],
+                    ['name' => 'Reason', 'value' => $reason, 'inline' => false]
+                ];
+                pp_send_discord("❌ Payment Failed", "A payment attempt was cancelled or failed.", $fields, 15158332);
+            }
+        }
+
+        // 3. Device Offline Event
+        if ($event === 'device.offline') {
+            $deviceName = $data['device_name'] ?? 'Companion Phone';
+            $deviceId = $data['device_id'] ?? 'N/A';
+            $simSlot = $data['sim_slot'] ?? 'SIM 1';
+            $lastSeen = $data['last_seen'] ?? date('d M Y, h:i A');
+
+            if (get_env('notification_event_device_offline_telegram') === 'yes' || get_env('notification_event_device_offline_telegram') === '') {
+                $tgMsg = "🚨 <b>DEVICE OFFLINE ALERT!</b>\n\n"
+                       . "📱 <b>Device:</b> {$deviceName}\n"
+                       . "🆔 <b>Device ID:</b> <code>{$deviceId}</code>\n"
+                       . "📶 <b>SIM Slot:</b> {$simSlot}\n"
+                       . "⏳ <b>Last Seen:</b> {$lastSeen}\n\n"
+                       . "⚠️ <i>Please check your companion phone network, battery or app state immediately!</i>";
+                pp_send_telegram($tgMsg);
+            }
+
+            if (get_env('notification_event_device_offline_discord') === 'yes' || get_env('notification_event_device_offline_discord') === '') {
+                $fields = [
+                    ['name' => 'Device Name', 'value' => $deviceName, 'inline' => true],
+                    ['name' => 'SIM Slot', 'value' => $simSlot, 'inline' => true],
+                    ['name' => 'Last Seen', 'value' => $lastSeen, 'inline' => true]
+                ];
+                pp_send_discord("🚨 Companion Device Offline", "Device `{$deviceId}` is no longer responding. SMS sync is paused.", $fields, 15105570);
+            }
+
+            if (get_env('notification_event_device_offline_whatsapp') === 'yes') {
+                $adminPhone = get_env('notification_whatsapp_target_phone');
+                if (!empty($adminPhone) && $adminPhone !== '--') {
+                    $waMsg = "🚨 *DEVICE OFFLINE ALERT!*\n\n"
+                           . "Device: {$deviceName}\n"
+                           . "SIM: {$simSlot}\n"
+                           . "Last Seen: {$lastSeen}\n"
+                           . "Please check phone app!";
+                    pp_send_whatsapp($adminPhone, $waMsg);
+                }
+            }
+        }
+
+        // 4. Device Low Battery Event
+        if ($event === 'device.low_battery') {
+            $deviceName = $data['device_name'] ?? 'Companion Phone';
+            $batteryLevel = $data['battery_level'] ?? '10%';
+
+            if (get_env('notification_event_device_battery_telegram') === 'yes') {
+                $tgMsg = "🪫 <b>Low Battery Alert!</b>\n\n"
+                       . "📱 <b>Device:</b> {$deviceName}\n"
+                       . "🔋 <b>Battery Level:</b> {$batteryLevel}\n"
+                       . "⚠️ Please plug in your companion phone charger to prevent payment interruptions.";
+                pp_send_telegram($tgMsg);
+            }
+
+            if (get_env('notification_event_device_battery_discord') === 'yes') {
+                $fields = [
+                    ['name' => 'Device', 'value' => $deviceName, 'inline' => true],
+                    ['name' => 'Battery Level', 'value' => "**{$batteryLevel}**", 'inline' => true]
+                ];
+                pp_send_discord("🪫 Low Battery Warning", "Companion phone battery is running critically low.", $fields, 16753920);
+            }
+        }
+    }
+
 
