@@ -144,6 +144,25 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
+        .mp-amount-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mp-amount-badge span.amount {
+            color: var(--mp-primary);
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
         .mp-icon-btn:hover {
             background: var(--mp-primary);
             border-color: var(--mp-primary);
@@ -385,6 +404,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
                 </div>
                 
+                <div class="mp-amount-badge">
+                    <span><?php echo $data['lang']['amount'] ?? 'Amount'; ?>:</span>
+                    <span class="amount"><?php echo money_round($data['transaction']['amount'] ?? 0, 2); ?> <?php echo htmlspecialchars($data['transaction']['currency'] ?? 'BDT'); ?></span>
+                </div>
+
                 <div class="d-flex gap-2">
                     <div class="mp-icon-btn tab-trigger" data-tab="support" title="<?php echo $data['lang']['support']?>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 15a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2l0 -3" /><path d="M15 15a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2l0 -3" /><path d="M4 15v-3a8 8 0 0 1 16 0v3" /></svg>

@@ -158,10 +158,32 @@
             box-shadow: 0 12px 24px -4px <?php echo pp_hexToRgba($primaryColor, 0.45); ?>;
         }
 
+        .form-label {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #334155;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .input-group-text {
+            border-radius: 10px 0 0 10px !important;
+            background: #f1f5f9;
+            font-weight: 700;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            border-right: none;
+        }
+
+        .input-group .form-control {
+            border-radius: 0 10px 10px 0 !important;
+        }
+
         .form-control, .form-select {
             border-radius: 10px;
-            padding: 10px 14px;
-            border: 1px solid #cbd5e1;
+            padding: 11px 14px;
+            border: 1.5px solid #cbd5e1;
+            font-size: 0.95rem;
         }
 
         .form-control:focus, .form-select:focus {

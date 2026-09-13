@@ -79,10 +79,10 @@
         :root {
             --mp-primary: <?php echo $primaryColor; ?>;
             --mp-text-btn: <?php echo $textColor; ?>;
-            --mp-card-bg: rgba(255, 255, 255, 0.94);
+            --mp-card-bg: rgba(255, 255, 255, 0.96);
             --mp-card-border: rgba(226, 232, 240, 0.9);
-            --mp-card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07), 0 0 1px 1px rgba(0, 0, 0, 0.04);
-            --mp-radius: 20px;
+            --mp-card-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.08), 0 0 1px 1px rgba(0, 0, 0, 0.04);
+            --mp-radius: 22px;
         }
 
         body {
@@ -91,7 +91,7 @@
             color: #1e293b;
             <?= $bgStyle ?>
             margin: 0;
-            padding: 20px 10px;
+            padding: 24px 12px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -99,7 +99,7 @@
         }
 
         .mp-container {
-            max-width: 580px;
+            max-width: 520px;
             width: 100%;
             margin: 0 auto;
         }
@@ -117,7 +117,7 @@
 
         .mp-topbar {
             padding: 14px 20px;
-            background: rgba(248, 250, 252, 0.8);
+            background: rgba(248, 250, 252, 0.85);
             border-bottom: 1px solid rgba(226, 232, 240, 0.8);
             display: flex;
             align-items: center;
@@ -135,123 +135,241 @@
             border: 1px solid #e2e8f0;
             color: #475569;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
 
         .mp-icon-btn:hover {
             background: var(--mp-primary);
             border-color: var(--mp-primary);
-            color: #ffffff;
+            color: var(--mp-text-btn);
             transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .mp-body {
-            padding: 24px 24px;
+            padding: 26px 24px;
         }
 
         .mp-gateway-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+        }
+
+        .mp-gw-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.07), 0 0 0 1px rgba(0, 0, 0, 0.04);
+            margin-bottom: 12px;
         }
 
         .mp-gw-logo {
-            height: 52px;
-            max-width: 160px;
+            height: 46px;
+            max-width: 140px;
             object-fit: contain;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
         }
 
-        .btn-primary {
+        .mp-amount-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mp-amount-badge span.amount {
+            color: var(--mp-primary);
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        /* Payment Instructions Box */
+        .payment-instructions {
+            background: <?php echo $gateway_info['gateway']['primary_color'];?>;
+            background: linear-gradient(145deg, <?php echo $gateway_info['gateway']['primary_color'];?>, <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.92)?>);
+            color: <?php echo $gateway_info['gateway']['text_color'];?>;
+            border-radius: 18px;
+            padding: 16px 20px;
+            margin: 16px 0 22px 0;
+            list-style: none;
+            box-shadow: 0 12px 28px -6px <?php echo pp_hexToRgba($gateway_info['gateway']['primary_color'], 0.38); ?>;
+        }
+
+        .payment-instructions li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            word-break: break-word;
+            border-bottom: 1px solid <?php echo pp_hexToRgba($gateway_info['gateway']['text_color'], 0.18)?>;
+            font-size: 0.93rem;
+            font-weight: 500;
+            line-height: 1.45;
+        }
+
+        .payment-instructions li:first-child {
+            padding-top: 4px;
+        }
+
+        .payment-instructions li:last-child {
+            border-bottom: none;
+            padding-bottom: 4px;
+        }
+
+        .payment-instructions li .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: <?php echo $gateway_info['gateway']['text_color'];?>;
+            min-width: 8px;
+            box-shadow: 0 0 8px <?php echo pp_hexToRgba($gateway_info['gateway']['text_color'], 0.6)?>;
+        }
+
+        .payment-instructions li p {
+            margin: 0;
+            flex: 1;
+            display: inline;
+        }
+
+        .payment-instructions li .dynamic-value {
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.22);
+            padding: 3px 8px;
+            border-radius: 7px;
+            letter-spacing: 0.4px;
+            display: inline-block;
+            margin: 0 3px;
+        }
+
+        /* Modern Copy & Action Button */
+        .payment-instructions li .button-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 5px 10px;
+            margin-left: 6px;
+            background-color: <?php echo $gateway_info['gateway']['text_color'];?>;
+            color: <?php echo $gateway_info['gateway']['primary_color'];?>;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.78rem;
+            line-height: 1;
+            vertical-align: middle;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .payment-instructions li .button-icon:hover {
+            transform: translateY(-1px) scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0.95;
+        }
+
+        .payment-instructions li .button-icon:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        /* Fix SVG size inside copy button and instructions */
+        .payment-instructions li .button-icon svg,
+        .payment-instructions li svg {
+            width: 15px !important;
+            height: 15px !important;
+            min-width: 15px !important;
+            min-height: 15px !important;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        /* Form Controls & Verification Submit */
+        .payment-form-submit {
+            margin-top: 10px;
+        }
+
+        .form-label {
+            font-weight: 700;
+            font-size: 0.88rem;
+            color: #334155;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 13px 16px;
+            font-size: 0.96rem;
+            border: 1.5px solid #cbd5e1;
+            background-color: #f8fafc;
+            color: #0f172a;
+            transition: all 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: var(--mp-primary);
+            box-shadow: 0 0 0 4px <?php echo pp_hexToRgba($primaryColor, 0.16)?>;
+            outline: none;
+        }
+
+        .payment-form-btn, .btn-primary {
             --tblr-btn-border-color: transparent;
             --tblr-btn-hover-border-color: transparent;
             --tblr-btn-active-border-color: transparent;
             --tblr-btn-color: var(--mp-text-btn);
             --tblr-btn-bg: var(--mp-primary);
             --tblr-btn-hover-color: var(--mp-text-btn);
-            --tblr-btn-hover-bg: <?php echo pp_hexToRgba($primaryColor, 0.88)?>;
-            --tblr-btn-active-color: var(--mp-text-btn);
-            --tblr-btn-active-bg: <?php echo pp_hexToRgba($primaryColor, 0.88)?>;
+            --tblr-btn-hover-bg: <?php echo pp_hexToRgba($primaryColor, 0.9)?>;
             border-radius: 12px;
-            padding: 12px 24px;
+            padding: 13px 24px;
             font-weight: 700;
-            box-shadow: 0 8px 20px -4px <?php echo pp_hexToRgba($primaryColor, 0.35); ?>;
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 24px -4px <?php echo pp_hexToRgba($primaryColor, 0.45); ?>;
-        }
-
-        .form-control:focus {
-            border-color: var(--mp-primary);
-            box-shadow: 0 0 0 4px <?php echo pp_hexToRgba($primaryColor, 0.15); ?>;
-        }
-
-        .payment-instructions {
-            background: linear-gradient(135deg, <?php echo $primaryColor; ?> 0%, <?php echo pp_hexToRgba($primaryColor, 0.85); ?> 100%);
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            background: var(--mp-primary);
             color: var(--mp-text-btn);
-            border-radius: 16px;
-            padding: 14px 20px;
-            margin: 16px 0;
-            box-shadow: 0 10px 20px -5px <?php echo pp_hexToRgba($primaryColor, 0.3); ?>;
-        }
-
-        .payment-instructions li {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 0;
-            word-break: break-word;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.92rem;
-        }
-
-        .payment-instructions li:last-child {
-            border-bottom: none;
-        }
-
-        .payment-instructions li .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: var(--mp-text-btn);
-            min-width: 6px;
-        }
-
-        .payment-instructions li p {
-            margin: 0;
-        }
-
-        .payment-instructions li .dynamic-value {
-            font-weight: 700;
-        }
-
-        .payment-instructions li .button-icon {
-            padding: 4px 10px;
-            margin-left: auto;
-            background: #ffffff;
-            color: var(--mp-primary);
-            border-radius: 8px;
+            border: none;
+            width: 100%;
+            box-shadow: 0 8px 20px -4px <?php echo pp_hexToRgba($primaryColor, 0.4); ?>;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
-            font-weight: 700;
-            font-size: 0.8rem;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transition: transform 0.15s ease;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .payment-instructions li .button-icon:hover {
-            transform: scale(1.05);
+        .payment-form-btn:hover, .btn-primary:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 12px 24px -4px <?php echo pp_hexToRgba($primaryColor, 0.5); ?>;
+            color: var(--mp-text-btn);
         }
 
-        .bp-modal {
+        .payment-form-btn:active, .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Modal Preview */
+        .bp-modal, .pp-modal {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -259,10 +377,10 @@
             padding: 15px;
         }
 
-        .bp-modal-content {
+        .bp-modal-content, .pp-modal-content {
             position: relative;
             background: #ffffff;
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 16px;
             max-width: 95vw;
             max-height: 95vh;
@@ -270,14 +388,14 @@
             animation: bpZoomIn 0.25s ease-out;
         }
 
-        #bp-modal-image {
+        #bp-modal-image, #pp-modal-image {
             display: block;
             max-width: 320px;
             border-radius: 12px;
             width: 100%;
         }
 
-        .bp-close {
+        .bp-close, .pp-close {
             position: absolute;
             top: -12px;
             right: -12px;
@@ -296,7 +414,7 @@
             transition: transform 0.2s ease;
         }
 
-        .bp-close:hover {
+        .bp-close:hover, .pp-close:hover {
             transform: scale(1.1);
         }
 
@@ -307,16 +425,17 @@
 
         .mp-footer-branding {
             text-align: center;
-            margin-top: 18px;
-            font-size: 0.8rem;
+            margin-top: 20px;
+            font-size: 0.82rem;
             color: #64748b;
             font-weight: 500;
         }
 
         @media (max-width: 576px) {
-            body { padding: 10px 6px; }
-            .mp-card { border-radius: 16px; }
-            .mp-body { padding: 18px 14px; }
+            body { padding: 12px 8px; }
+            .mp-card { border-radius: 18px; }
+            .mp-body { padding: 20px 16px; }
+            .payment-instructions { padding: 14px 16px; }
         }
     </style>
 </head>
@@ -330,6 +449,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M5 12l6 6" /><path d="M5 12l6 -6" /></svg>
                 </div>
                 
+                <div class="mp-amount-badge">
+                    <span><?php echo $data['lang']['amount'] ?? 'Amount'; ?>:</span>
+                    <span class="amount"><?php echo money_round($data['transaction']['amount'] ?? 0, 2); ?> <?php echo htmlspecialchars($data['transaction']['currency'] ?? 'BDT'); ?></span>
+                </div>
+
                 <div class="mp-icon-btn" data-bs-target="#modal-language" data-bs-toggle="modal" title="<?php echo $data['lang']['language']?>">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6.371c0 4.418 -2.239 6.629 -5 6.629" /><path d="M4 6.371h7" /><path d="M5 9c0 2.144 2.252 3.908 6 4" /><path d="M12 20l4 -9l4 9" /><path d="M19.1 18h-6.2" /><path d="M6.694 3l.793 .582" /></svg>
                 </div>
@@ -338,7 +462,9 @@
             <!-- Main Content Area -->
             <div class="mp-body">
                 <div class="mp-gateway-header">
-                    <img src="<?php echo $gateway_info['gateway']['logo'];?>" alt="" class="mp-gw-logo">
+                    <div class="mp-gw-logo-wrap">
+                        <img src="<?php echo $gateway_info['gateway']['logo'];?>" alt="<?php echo htmlspecialchars($gateway_info['gateway']['display'] ?? ''); ?>" class="mp-gw-logo">
+                    </div>
                 </div>
 
                 <?php
