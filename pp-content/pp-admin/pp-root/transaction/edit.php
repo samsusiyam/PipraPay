@@ -87,6 +87,25 @@ if (!defined('PipraPay_INIT')) {
             </div>
             <div class="col-auto ms-auto d-print-none">
                 <div class="btn-list">
+                    <?php 
+                        $tx_status = $response_transaction['response'][0]['status'] ?? '';
+                        if($tx_status == 'pending'){
+                    ?>
+                        <button class="btn btn-success btnApproveItem-<?php echo $ref;?> <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'approve', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="approveItem('<?php echo $ref;?>')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg> Approve & Complete
+                        </button>
+                        <button class="btn btn-outline-danger btnCancelItem-<?php echo $ref;?> <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'cancel', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="cancelItem('<?php echo $ref;?>')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg> Cancel
+                        </button>
+                    <?php 
+                        } elseif($tx_status == 'completed'){
+                    ?>
+                        <a href="<?php echo $site_url; ?>/payment/<?php echo $ref; ?>?receipt" target="_blank" class="btn btn-outline-dark">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 11v6" /><path d="M9 14l3 3l3 -3" /></svg> Download Receipt
+                        </a>
+                    <?php 
+                        }
+                    ?>
                     <div data-bs-toggle="modal" data-bs-target="#model-bulkAction" class="btn btn-primary <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'edit', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg> Edit</div>
                     <button class="btn btn-success btnIpnItem-<?php echo $ref;?> <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'send_ipn', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="ipnItem('<?php echo $ref;?>')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-sitemap"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M2 16.667a2.667 2.667 0 0 1 2.667 -2.667h2.666a2.667 2.667 0 0 1 2.667 2.667v2.666a2.667 2.667 0 0 1 -2.667 2.667h-2.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M14 16.667a2.667 2.667 0 0 1 2.667 -2.667h2.666a2.667 2.667 0 0 1 2.667 2.667v2.666a2.667 2.667 0 0 1 -2.667 2.667h-2.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M8 4.667a2.667 2.667 0 0 1 2.667 -2.667h2.666a2.667 2.667 0 0 1 2.667 2.667v2.666a2.667 2.667 0 0 1 -2.667 2.667h-2.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M12 8a1 1 0 0 0 -1 1v2h-3c-1.645 0 -3 1.355 -3 3v1a1 1 0 0 0 1 1a1 1 0 0 0 1 -1v-1c0 -.564 .436 -1 1 -1h8c.564 0 1 .436 1 1v1a1 1 0 0 0 1 1a1 1 0 0 0 1 -1v-1c0 -1.645 -1.355 -3 -3 -3h-3v-2a1 1 0 0 0 -1 -1z" /></svg> Send IPN</button>
                     <button class="btn btn-danger btnDeleteItem-<?php echo $ref;?> <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'delete', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="deleteItem('<?php echo $ref;?>')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete</button>
@@ -202,20 +221,24 @@ if (!defined('PipraPay_INIT')) {
                                                 </div>
 
                                                 <?php
-                                                    if($response_transaction['response'][0]['trx_slip'] !== '--'){
+                                                    if(!empty($response_transaction['response'][0]['trx_slip']) && $response_transaction['response'][0]['trx_slip'] !== '--'){
                                                 ?>
                                                         <div class="col-md-4 mb-2">
                                                             <label class="form-label">Payment Slip</label>
-
-                                                            <p class="m-0 text-dark form-label"><a href="<?php echo $response_transaction['response'][0]['trx_slip']?>" target="blank">View</a></p>
+                                                            <p class="m-0 text-dark form-label">
+                                                                <a href="<?php echo htmlspecialchars($response_transaction['response'][0]['trx_slip']); ?>" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M10 12l4 4m0 -4l-4 4" /></svg>
+                                                                    View Slip
+                                                                </a>
+                                                            </p>
                                                         </div>
                                                 <?php
-                                                    }else{
+                                                    }
+                                                    if(!empty($response_transaction['response'][0]['trx_id']) && $response_transaction['response'][0]['trx_id'] !== '--'){
                                                 ?>
                                                         <div class="col-md-4 mb-2">
                                                             <label class="form-label">Transaction Id</label>
-
-                                                            <p class="m-0 text-dark form-label"><?php echo $response_transaction['response'][0]['trx_id']?></p>
+                                                            <p class="m-0 text-dark form-label"><?php echo htmlspecialchars($response_transaction['response'][0]['trx_id']); ?></p>
                                                         </div>
                                                 <?php
                                                     }
@@ -503,6 +526,128 @@ if (!defined('PipraPay_INIT')) {
             }
         }
     });
+
+    function approveItem(ItemID){
+        var my_action_confirmation_btn = document.querySelector("#my-action-confirmation-btn").value;
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var btnClass = 'btnApproveItem-'+ItemID;
+
+        if(my_action_confirmation_btn !== ""){
+            var btn = document.querySelector('#model-my-action-confirmation-btn').innerHTML;
+            document.querySelector('#model-my-action-confirmation-btn').innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
+
+            const selectedRows = [ItemID];
+            $.ajax({
+                type: 'POST',
+                url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                data: {action: "transaction-bulk-action", csrf_token: csrf_token_default, actionID: "approved", selected_ids: JSON.stringify(selectedRows)},
+                dataType: 'json',
+                success: function (response) {
+                    closeAllBootstrapModals();
+                    document.querySelector("#my-action-confirmation-btn").value = '';
+                    document.querySelector('#model-my-action-confirmation-btn').innerHTML = btn;
+
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+                        input.value = response.csrf_token;
+                    });
+                    document.querySelectorAll('input[name="csrf_token_default"]').forEach(input => {
+                        input.value = response.csrf_token;
+                    });
+
+                    if (response.status === 'true') {
+                        createToast({
+                            title: response.title,
+                            description: response.message,
+                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f38f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>`,
+                            timeout: 6000,
+                            top: 70
+                        });
+                        load_content('Edit Transaction','<?php echo $site_url.$path_admin ?>/transaction/edit?t_id=<?php echo $ref?>','nav-item-transaction');
+                    } else {
+                        createToast({
+                            title: response.title,
+                            description: response.message,
+                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                            timeout: 6000,
+                            top: 70
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    createToast({
+                        title: 'Something Wrong!',
+                        description: 'For further assistance, please contact our support team.',
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                        timeout: 6000,
+                        top: 70
+                    });
+                }
+            });
+        }else{
+            show_action_confirmation_tab(btnClass, 'Approve Transaction', 'Approve', 'btn-success');
+        }
+    }
+
+    function cancelItem(ItemID){
+        var my_action_confirmation_btn = document.querySelector("#my-action-confirmation-btn").value;
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var btnClass = 'btnCancelItem-'+ItemID;
+
+        if(my_action_confirmation_btn !== ""){
+            var btn = document.querySelector('#model-my-action-confirmation-btn').innerHTML;
+            document.querySelector('#model-my-action-confirmation-btn').innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
+
+            const selectedRows = [ItemID];
+            $.ajax({
+                type: 'POST',
+                url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                data: {action: "transaction-bulk-action", csrf_token: csrf_token_default, actionID: "canceled", selected_ids: JSON.stringify(selectedRows)},
+                dataType: 'json',
+                success: function (response) {
+                    closeAllBootstrapModals();
+                    document.querySelector("#my-action-confirmation-btn").value = '';
+                    document.querySelector('#model-my-action-confirmation-btn').innerHTML = btn;
+
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(input => {
+                        input.value = response.csrf_token;
+                    });
+                    document.querySelectorAll('input[name="csrf_token_default"]').forEach(input => {
+                        input.value = response.csrf_token;
+                    });
+
+                    if (response.status === 'true') {
+                        createToast({
+                            title: response.title,
+                            description: response.message,
+                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f38f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>`,
+                            timeout: 6000,
+                            top: 70
+                        });
+                        load_content('Edit Transaction','<?php echo $site_url.$path_admin ?>/transaction/edit?t_id=<?php echo $ref?>','nav-item-transaction');
+                    } else {
+                        createToast({
+                            title: response.title,
+                            description: response.message,
+                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                            timeout: 6000,
+                            top: 70
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    createToast({
+                        title: 'Something Wrong!',
+                        description: 'For further assistance, please contact our support team.',
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                        timeout: 6000,
+                        top: 70
+                    });
+                }
+            });
+        }else{
+            show_action_confirmation_tab(btnClass, 'Cancel Transaction', 'Cancel', 'btn-danger');
+        }
+    }
 
     function ipnItem(ItemID){
         var my_action_confirmation_btn = document.querySelector("#my-action-confirmation-btn").value;

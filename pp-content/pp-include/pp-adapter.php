@@ -6864,6 +6864,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                             $condition = "ref = '".$itemID."'"; 
                                             
                                             updateData($db_prefix.'transaction', $columns, $values, $condition);
+                                            $response_brand['response'][0]['status'] = 'completed';
                                         }
                                     }
 
@@ -6948,6 +6949,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                             $condition = "ref = '".$itemID."'"; 
                                             
                                             updateData($db_prefix.'transaction', $columns, $values, $condition);
+                                            $response_brand['response'][0]['status'] = 'canceled';
                                         }
                                     }
 

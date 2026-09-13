@@ -226,7 +226,7 @@
                 <div class="mb-3">
                     <a href="<?php echo $data['transaction']['return_url']?>" class="btn btn-primary <?php echo ($data['transaction']['return_url'] == "--" || $data['transaction']['return_url'] == "") ? 'd-none' : ''?>"><?php echo $data['lang']['go_to_site']?></a>
                     <?php
-                        if($status == "completed" || $status == "pending" || $status == "refunded"){
+                        if($status == "completed"){
                     ?>
                            <a href="<?php echo pp_checkout_address();?>?receipt" class="btn btn-success"><?php echo $data['lang']['download_receipt']?></a>
                     <?php

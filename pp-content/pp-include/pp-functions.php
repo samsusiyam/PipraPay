@@ -2240,11 +2240,15 @@
 
     function pp_downloadReceiptPDF($data = []){
 
-        if (!$data) {
+        if (!$data || empty($data['transaction'])) {
             die('Invalid transaction');
         }
 
         $tx = $data['transaction'];
+        if (($tx['status'] ?? '') !== 'completed') {
+            die('Receipt is only available for completed transactions.');
+        }
+
         $brand = $data['brand'];
 
         $amountPaid = money_add(money_sub($tx['amount'] ?? 0, $tx['discount_amount'] ?? 0), $tx['processing_fee'] ?? 0);
