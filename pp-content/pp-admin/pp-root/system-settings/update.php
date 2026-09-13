@@ -453,7 +453,7 @@ if (is_dir($backup_dir)) {
                                     <th>Type</th>
                                     <th>Size</th>
                                     <th>Created Date</th>
-                                    <th class="text-end">Actions</th>
+                                    <th class="text-end" style="min-width: 170px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -468,13 +468,15 @@ if (is_dir($backup_dir)) {
                                         <td><span class="badge bg-blue-lt"><?php echo htmlspecialchars($b['type']); ?></span></td>
                                         <td><?php echo htmlspecialchars($b['size']); ?></td>
                                         <td class="text-muted"><?php echo htmlspecialchars($b['date']); ?></td>
-                                        <td class="text-end">
-                                            <div class="btn-list justify-content-end">
-                                                <a href="<?php echo $site_url.$path_admin; ?>/dashboard?action=system-settings-update-backup-download&file=<?php echo urlencode($b['name']); ?>" class="btn btn-sm btn-icon btn-outline-primary" title="Download Snapshot" download>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
+                                        <td class="text-end text-nowrap">
+                                            <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                                <a href="<?php echo $site_url.$path_admin; ?>/dashboard?action=system-settings-update-backup-download&file=<?php echo urlencode($b['name']); ?>" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 px-2 py-1 shadow-none" title="Download Snapshot" download>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon m-0" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
+                                                    <span class="small">Download</span>
                                                 </a>
-                                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-backup" data-file="<?php echo htmlspecialchars($b['name']); ?>" data-row="row-backup-<?php echo md5($b['name']); ?>" title="Delete Snapshot">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                                <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 px-2 py-1 btn-delete-backup shadow-none" data-file="<?php echo htmlspecialchars($b['name']); ?>" data-row="row-backup-<?php echo md5($b['name']); ?>" title="Delete Snapshot">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon m-0" width="15" height="15" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                                    <span class="small">Delete</span>
                                                 </button>
                                             </div>
                                         </td>
