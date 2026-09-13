@@ -7873,29 +7873,33 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                     $channel = escape_string($_POST['channel'] ?? '');
                     $siteName = get_env('geneal-brand-settings-title') ?: 'PipraPay';
+                    if ($siteName === '--') $siteName = 'PipraPay';
 
                     if ($channel === 'telegram') {
-                        $token = get_env('notification_telegram_token');
-                        $chatId = get_env('notification_telegram_chat_id');
-                        if (empty($token) || empty($chatId)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your Telegram Bot Token and Chat ID first.', 'csrf_token' => $new_csrf_token]);
+                        $token = !empty($_POST['notification_telegram_token']) ? trim($_POST['notification_telegram_token']) : get_env('notification_telegram_token');
+                        $chatId = !empty($_POST['notification_telegram_chat_id']) ? trim($_POST['notification_telegram_chat_id']) : get_env('notification_telegram_chat_id');
+                        $topicId = !empty($_POST['notification_telegram_topic_id']) ? trim($_POST['notification_telegram_topic_id']) : get_env('notification_telegram_topic_id');
+
+                        if (empty($token) || $token === '--' || empty($chatId) || $chatId === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter your Telegram Bot Token and Chat ID to send a test message.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
                         $msg = "⚡ <b>PipraPay Test Notification</b>\n\n"
                              . "✅ Your Telegram Bot notification system is working perfectly!\n"
                              . "🕒 <b>Time:</b> " . date('Y-m-d H:i:s') . "\n"
                              . "🌐 <b>Platform:</b> {$siteName}";
-                        $res = pp_send_telegram($msg);
-                        if (!empty($res['ok'])) {
-                            echo json_encode(['status' => 'true', 'title' => 'Telegram Alert Sent', 'message' => 'Test notification sent to Telegram successfully!', 'csrf_token' => $new_csrf_token]);
+                        $res = pp_send_telegram($msg, $chatId, $token, $topicId);
+                        if (!empty($res['status'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'Telegram Alert Sent', 'message' => $res['message'] ?? 'Test notification sent to Telegram successfully!', 'csrf_token' => $new_csrf_token]);
                         } else {
-                            $err = $res['description'] ?? 'Telegram API error. Please check your Bot Token and Chat ID.';
-                            echo json_encode(['status' => 'false', 'title' => 'Telegram Error', 'message' => $err, 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'false', 'title' => 'Telegram Error', 'message' => $res['message'] ?? 'Telegram API error. Please check your Bot Token and Chat ID.', 'csrf_token' => $new_csrf_token]);
                         }
                     } elseif ($channel === 'discord') {
-                        $webhook = get_env('notification_discord_webhook');
-                        if (empty($webhook)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your Discord Webhook URL first.', 'csrf_token' => $new_csrf_token]);
+                        $webhook = !empty($_POST['notification_discord_webhook']) ? trim($_POST['notification_discord_webhook']) : get_env('notification_discord_webhook');
+                        $botName = !empty($_POST['notification_discord_bot_name']) ? trim($_POST['notification_discord_bot_name']) : get_env('notification_discord_bot_name');
+
+                        if (empty($webhook) || $webhook === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter your Discord Webhook URL to send a test alert.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
                         $fields = [
@@ -7903,32 +7907,52 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             ['name' => 'Platform', 'value' => $siteName, 'inline' => true],
                             ['name' => 'Timestamp', 'value' => date('Y-m-d H:i:s'), 'inline' => false]
                         ];
-                        $res = pp_send_discord("🔔 Discord Test Alert", "Your Discord webhook integration for **{$siteName}** is working properly.", $fields, 5793266);
-                        if (!empty($res['success'])) {
-                            echo json_encode(['status' => 'true', 'title' => 'Discord Alert Sent', 'message' => 'Test embed notification posted to Discord successfully!', 'csrf_token' => $new_csrf_token]);
+                        $res = pp_send_discord("🔔 Discord Test Alert", "Your Discord webhook integration for **{$siteName}** is working properly.", $fields, 5793266, $webhook);
+                        if (!empty($res['status'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'Discord Alert Sent', 'message' => $res['message'] ?? 'Test embed notification posted to Discord successfully!', 'csrf_token' => $new_csrf_token]);
                         } else {
-                            echo json_encode(['status' => 'false', 'title' => 'Discord Error', 'message' => 'Failed to send to Discord webhook (HTTP code: ' . ($res['code'] ?? '0') . '). Check webhook URL.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'false', 'title' => 'Discord Error', 'message' => $res['message'] ?? 'Failed to send to Discord webhook. Please check the Webhook URL.', 'csrf_token' => $new_csrf_token]);
                         }
                     } elseif ($channel === 'whatsapp') {
-                        $targetPhone = get_env('notification_whatsapp_target_phone');
-                        $apiUrl = get_env('notification_whatsapp_api_url');
-                        if (empty($apiUrl) || empty($targetPhone)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your WhatsApp API Endpoint URL and Target Phone number first.', 'csrf_token' => $new_csrf_token]);
+                        $apiUrl = !empty($_POST['notification_whatsapp_api_url']) ? trim($_POST['notification_whatsapp_api_url']) : get_env('notification_whatsapp_api_url');
+                        $apiKey = !empty($_POST['notification_whatsapp_api_key']) ? trim($_POST['notification_whatsapp_api_key']) : get_env('notification_whatsapp_api_key');
+                        $sender = !empty($_POST['notification_whatsapp_sender']) ? trim($_POST['notification_whatsapp_sender']) : get_env('notification_whatsapp_sender');
+                        $targetPhone = !empty($_POST['notification_whatsapp_target_phone']) ? trim($_POST['notification_whatsapp_target_phone']) : get_env('notification_whatsapp_target_phone');
+
+                        if (empty($apiUrl) || $apiUrl === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter your WhatsApp API Endpoint URL first.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+                        if (empty($targetPhone) || $targetPhone === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Target Number', 'message' => 'Please enter a target WhatsApp phone number to receive the test message.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
                         $msg = "⚡ *PipraPay WhatsApp Test Notification*\n\nYour WhatsApp alert integration on {$siteName} is working properly!\nTime: " . date('Y-m-d H:i:s');
-                        $res = pp_send_whatsapp($targetPhone, $msg);
-                        if (!empty($res['success'])) {
-                            echo json_encode(['status' => 'true', 'title' => 'WhatsApp Alert Sent', 'message' => 'Test message sent to WhatsApp successfully!', 'csrf_token' => $new_csrf_token]);
+                        $res = pp_send_whatsapp($targetPhone, $msg, ['api_url' => $apiUrl, 'api_key' => $apiKey, 'sender_id' => $sender]);
+                        if (!empty($res['status'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'WhatsApp Alert Sent', 'message' => $res['message'] ?? 'Test message sent to WhatsApp successfully!', 'csrf_token' => $new_csrf_token]);
                         } else {
-                            echo json_encode(['status' => 'false', 'title' => 'WhatsApp Error', 'message' => 'WhatsApp API error (HTTP code: ' . ($res['code'] ?? '0') . '). Verify your endpoint & API key.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'false', 'title' => 'WhatsApp Error', 'message' => $res['message'] ?? 'WhatsApp API error. Verify your endpoint URL & API credentials.', 'csrf_token' => $new_csrf_token]);
                         }
                     } elseif ($channel === 'email') {
-                        $adminEmail = get_env('notification_email_admin_recipients') ?: ($global_user_response['response'][0]['email'] ?? '');
-                        if (empty($adminEmail)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Email', 'message' => 'Please configure Admin Notification Email or update your account email first.', 'csrf_token' => $new_csrf_token]);
+                        $smtpHost = !empty($_POST['notification_email_smtp_host']) ? trim($_POST['notification_email_smtp_host']) : get_env('notification_email_smtp_host');
+                        $smtpPort = !empty($_POST['notification_email_smtp_port']) ? trim($_POST['notification_email_smtp_port']) : get_env('notification_email_smtp_port');
+                        $smtpEnc  = !empty($_POST['notification_email_smtp_enc']) ? trim($_POST['notification_email_smtp_enc']) : get_env('notification_email_smtp_enc');
+                        $smtpUser = !empty($_POST['notification_email_smtp_user']) ? trim($_POST['notification_email_smtp_user']) : get_env('notification_email_smtp_user');
+                        $smtpPass = !empty($_POST['notification_email_smtp_pass']) ? trim($_POST['notification_email_smtp_pass']) : get_env('notification_email_smtp_pass');
+                        $fromName = !empty($_POST['notification_email_from_name']) ? trim($_POST['notification_email_from_name']) : get_env('notification_email_from_name');
+                        $fromEmail = !empty($_POST['notification_email_from']) ? trim($_POST['notification_email_from']) : get_env('notification_email_from');
+                        $adminEmail = !empty($_POST['notification_email_admin_recipients']) ? trim($_POST['notification_email_admin_recipients']) : (get_env('notification_email_admin_recipients') ?: ($global_user_response['response'][0]['email'] ?? ''));
+
+                        if (empty($smtpHost) || $smtpHost === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing SMTP Host', 'message' => 'Please configure your SMTP Host, Username, and Password before testing.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
+                        if (empty($adminEmail) || $adminEmail === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Recipient Email', 'message' => 'Please enter an Admin Alert Email recipient to receive the test email.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
                         $firstEmail = trim(explode(',', $adminEmail)[0]);
                         $subject = "⚡ PipraPay SMTP Test Email";
                         $html = "<div style='font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
@@ -7936,29 +7960,44 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             <p>This is a test email confirming your SMTP server settings on <strong>{$siteName}</strong> are working correctly.</p>
                             <p style='color: #64748b; font-size: 13px;'>Sent at: " . date('Y-m-d H:i:s') . "</p>
                         </div>";
-                        $res = pp_send_email($firstEmail, $subject, $html);
-                        if ($res) {
-                            echo json_encode(['status' => 'true', 'title' => 'Email Sent', 'message' => "Test email dispatched to {$firstEmail} successfully!", 'csrf_token' => $new_csrf_token]);
+                        $res = pp_send_email($firstEmail, $subject, $html, [
+                            'smtp_host' => $smtpHost,
+                            'smtp_port' => $smtpPort,
+                            'smtp_enc'  => $smtpEnc,
+                            'smtp_user' => $smtpUser,
+                            'smtp_pass' => $smtpPass,
+                            'from_name' => $fromName,
+                            'from_email'=> $fromEmail
+                        ]);
+                        if (!empty($res['status'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'Email Sent', 'message' => $res['message'] ?? "Test email dispatched to {$firstEmail} successfully!", 'csrf_token' => $new_csrf_token]);
                         } else {
-                            echo json_encode(['status' => 'false', 'title' => 'SMTP Error', 'message' => 'Failed to send test email. Please check your SMTP host, port, credentials, and encryption.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'false', 'title' => 'SMTP Error', 'message' => $res['message'] ?? 'Failed to send test email. Please verify SMTP host, port, username, and password.', 'csrf_token' => $new_csrf_token]);
                         }
                     } elseif ($channel === 'sms') {
-                        $smsUrl = get_env('notification_sms_api_url');
-                        $targetPhone = get_env('notification_whatsapp_target_phone') ?: ($global_user_response['response'][0]['phone'] ?? '');
-                        if (empty($smsUrl)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter and save your SMS Gateway HTTP API URL first.', 'csrf_token' => $new_csrf_token]);
+                        $smsUrl = !empty($_POST['notification_sms_api_url']) ? trim($_POST['notification_sms_api_url']) : get_env('notification_sms_api_url');
+                        $apiKey = !empty($_POST['notification_sms_api_key']) ? trim($_POST['notification_sms_api_key']) : get_env('notification_sms_api_key');
+                        $senderId = !empty($_POST['notification_sms_sender_id']) ? trim($_POST['notification_sms_sender_id']) : get_env('notification_sms_sender_id');
+                        $targetPhone = !empty($_POST['notification_whatsapp_target_phone']) ? trim($_POST['notification_whatsapp_target_phone']) : (get_env('notification_whatsapp_target_phone') ?: ($global_user_response['response'][0]['phone'] ?? ''));
+
+                        if (empty($smsUrl) || $smsUrl === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Configuration', 'message' => 'Please enter your SMS Gateway HTTP API URL before testing.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
-                        if (empty($targetPhone)) {
-                            echo json_encode(['status' => 'false', 'title' => 'Missing Target Number', 'message' => 'Please configure a target phone number in WhatsApp tab or user profile to receive test SMS.', 'csrf_token' => $new_csrf_token]);
+                        if (empty($targetPhone) || $targetPhone === '--') {
+                            echo json_encode(['status' => 'false', 'title' => 'Missing Target Number', 'message' => 'Please configure a target recipient phone number to receive the test SMS.', 'csrf_token' => $new_csrf_token]);
                             exit();
                         }
                         $msg = "PipraPay SMS Test Alert: SMS gateway integration is working properly on {$siteName}.";
-                        $res = pp_send_sms($targetPhone, $msg);
-                        if (!empty($res['success'])) {
-                            echo json_encode(['status' => 'true', 'title' => 'SMS Dispatched', 'message' => "Test SMS dispatched to {$targetPhone} (HTTP {$res['code']}).", 'csrf_token' => $new_csrf_token]);
+                        $res = pp_send_sms($targetPhone, $msg, [
+                            'api_url' => $smsUrl,
+                            'api_key' => $apiKey,
+                            'sender_id' => $senderId
+                        ]);
+                        if (!empty($res['status'])) {
+                            echo json_encode(['status' => 'true', 'title' => 'SMS Dispatched', 'message' => $res['message'] ?? "Test SMS dispatched to {$targetPhone} successfully!", 'csrf_token' => $new_csrf_token]);
                         } else {
-                            echo json_encode(['status' => 'false', 'title' => 'SMS Error', 'message' => 'Failed to dispatch SMS (HTTP ' . ($res['code'] ?? '0') . '). Verify API URL & token.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'false', 'title' => 'SMS Error', 'message' => $res['message'] ?? 'Failed to dispatch SMS. Verify your API URL & parameters.', 'csrf_token' => $new_csrf_token]);
                         }
                     } else {
                         echo json_encode(['status' => 'false', 'title' => 'Invalid Channel', 'message' => 'Unknown notification channel.', 'csrf_token' => $new_csrf_token]);
