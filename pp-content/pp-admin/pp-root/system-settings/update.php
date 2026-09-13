@@ -284,31 +284,31 @@ if (is_dir($backup_dir)) {
                     <h4 class="card-title mb-3">Update Progress Workflow</h4>
                     <div class="row g-2 text-center">
                         <div class="col-3">
-                            <div class="p-2 border rounded bg-light" id="step-1-box">
-                                <div class="badge bg-success mb-1">✓ Step 1</div>
+                            <div class="p-2 border rounded bg-success-lt border-success-subtle" id="step-1-box">
+                                <div class="badge bg-success text-white mb-1" id="step-1-badge">✓ Step 1</div>
                                 <div class="fw-semibold small">Version Detected</div>
                                 <div class="text-muted small">Update available</div>
                             </div>
                         </div>
                         <div class="col-3">
-                            <div class="p-2 border rounded bg-light" id="step-2-box">
-                                <div class="badge bg-success mb-1">✓ Step 2</div>
+                            <div class="p-2 border rounded bg-success-lt border-success-subtle" id="step-2-box">
+                                <div class="badge bg-success text-white mb-1" id="step-2-badge">✓ Step 2</div>
                                 <div class="fw-semibold small">Review Changes</div>
                                 <div class="text-muted small">Changelog ready</div>
                             </div>
                         </div>
                         <div class="col-3">
-                            <div class="p-2 border rounded bg-light" id="step-3-box">
-                                <div class="badge <?php echo $is_zip_downloaded ? 'bg-success' : 'bg-primary'; ?> mb-1" id="step-3-badge"><?php echo $is_zip_downloaded ? '✓ Step 3' : 'Step 3'; ?></div>
+                            <div class="p-2 border rounded <?php echo $is_zip_downloaded ? 'bg-success-lt border-success-subtle' : 'bg-primary-lt border-primary-subtle'; ?>" id="step-3-box">
+                                <div class="badge <?php echo $is_zip_downloaded ? 'bg-success' : 'bg-primary'; ?> text-white mb-1" id="step-3-badge"><?php echo $is_zip_downloaded ? '✓ Step 3' : 'Step 3'; ?></div>
                                 <div class="fw-semibold small">Download Archive</div>
                                 <div class="text-muted small" id="step-3-status"><?php echo $is_zip_downloaded ? 'Package ready' : 'Pending download'; ?></div>
                             </div>
                         </div>
                         <div class="col-3">
-                            <div class="p-2 border rounded bg-light" id="step-4-box">
-                                <div class="badge bg-secondary mb-1" id="step-4-badge">Step 4</div>
+                            <div class="p-2 border rounded <?php echo $is_zip_downloaded ? 'bg-primary-lt border-primary-subtle' : 'bg-light'; ?>" id="step-4-box">
+                                <div class="badge <?php echo $is_zip_downloaded ? 'bg-primary' : 'bg-secondary'; ?> text-white mb-1" id="step-4-badge">Step 4</div>
                                 <div class="fw-semibold small">Backup & Install</div>
-                                <div class="text-muted small" id="step-4-status">Ready to install</div>
+                                <div class="text-muted small" id="step-4-status"><?php echo $is_zip_downloaded ? 'Ready to install' : 'Awaiting download'; ?></div>
                             </div>
                         </div>
                     </div>
@@ -668,8 +668,13 @@ if (is_dir($backup_dir)) {
 
                 if (response.status === 'true') {
                     setUpdateProgress(60, 'Download Completed', '[2/3] Package saved to storage. Ready for installation.');
-                    $('#step-3-badge').removeClass('bg-primary').addClass('bg-success').text('✓ Step 3');
+                    $('#step-3-badge').removeClass('bg-primary').addClass('bg-success text-white').text('✓ Step 3');
                     $('#step-3-status').text('Package ready');
+                    $('#step-3-box').removeClass('bg-primary-lt border-primary-subtle').addClass('bg-success-lt border-success-subtle');
+
+                    $('#step-4-badge').removeClass('bg-secondary').addClass('bg-primary text-white');
+                    $('#step-4-status').text('Ready to install');
+                    $('#step-4-box').removeClass('bg-light').addClass('bg-primary-lt border-primary-subtle');
 
                     createToast({
                         title: response.title,
@@ -727,8 +732,9 @@ if (is_dir($backup_dir)) {
 
                 if (response.status === 'true') {
                     setUpdateProgress(100, 'Installation Successful! 🎉', '[4/4] Update completed! Reloading dashboard in 3 seconds...');
-                    $('#step-4-badge').removeClass('bg-secondary').addClass('bg-success').text('✓ Step 4');
+                    $('#step-4-badge').removeClass('bg-primary bg-secondary').addClass('bg-success text-white').text('✓ Step 4');
                     $('#step-4-status').text('Installed');
+                    $('#step-4-box').removeClass('bg-primary-lt border-primary-subtle bg-light').addClass('bg-success-lt border-success-subtle');
 
                     createToast({
                         title: response.title,
@@ -790,8 +796,13 @@ if (is_dir($backup_dir)) {
 
                 if (response.status === 'true') {
                     setUpdateProgress(60, 'Download Complete', '[2/4] Package verified. Initiating backup & install...');
-                    $('#step-3-badge').removeClass('bg-primary').addClass('bg-success').text('✓ Step 3');
+                    $('#step-3-badge').removeClass('bg-primary').addClass('bg-success text-white').text('✓ Step 3');
                     $('#step-3-status').text('Package ready');
+                    $('#step-3-box').removeClass('bg-primary-lt border-primary-subtle').addClass('bg-success-lt border-success-subtle');
+
+                    $('#step-4-badge').removeClass('bg-secondary').addClass('bg-primary text-white');
+                    $('#step-4-status').text('Installing...');
+                    $('#step-4-box').removeClass('bg-light').addClass('bg-primary-lt border-primary-subtle');
                     
                     triggerInstallUpdate();
                 } else {
