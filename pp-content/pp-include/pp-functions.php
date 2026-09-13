@@ -2081,7 +2081,43 @@
         $pdf->SetAutoPageBreak(true, 15);
 
         if (!empty($brand['logo'])) {
-            $pdf->Image($brand['logo'], 10, 10, 35);
+            $logoPath = $brand['logo'];
+
+            // FPDF cannot read remote URLs unless allow_url_fopen is on.
+            // Download URL logos to a temp file so they always render.
+            if (preg_match('/^https?:\/\//i', $logoPath)) {
+                if (function_exists('curl_init')) {
+                    $tmp = tempnam(sys_get_temp_dir(), 'logo') . '.img';
+                    $ch = curl_init($logoPath);
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_BINARYTRANSFER => true,
+                        CURLOPT_TIMEOUT        => 15,
+                        CURLOPT_SSL_VERIFYPEER => false,
+                        CURLOPT_SSL_VERIFYHOST => false,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_USERAGENT      => 'Mozilla/5.0',
+                    ]);
+                    $imgData = curl_exec($ch);
+                    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                    curl_close($ch);
+
+                    if ($imgData !== false && $httpCode >= 200 && $httpCode < 300) {
+                        file_put_contents($tmp, $imgData);
+                        $logoPath = $tmp;
+                    }
+                }
+            }
+
+            try {
+                $pdf->Image($logoPath, 10, 10, 35);
+            } catch (Exception $e) {
+                // logo failed to load — continue without it
+            }
+
+            if (!empty($tmp) && file_exists($tmp)) {
+                @unlink($tmp);
+            }
         }
 
         $pdf->SetFont('Arial', 'B', 14);
@@ -2090,7 +2126,7 @@
 
         $pdf->SetFont('Arial', '', 10);
         $pdf->SetX(50);
-        $pdf->Cell(0, 6, $brand['address']['city'].', '.$brand['address']['country'], 0, 1);
+        $pdf->Cell(0, 6, ($brand['city_town'] ?? '').', '.($brand['country'] ?? ''), 0, 1);
 
         $pdf->Ln(10);
 
@@ -2132,11 +2168,11 @@
         sectionTitle($pdf, 'Transaction Details');
         infoRow($pdf, 'Transaction Ref', $tx['ref']);
         infoRow($pdf, 'Payment Method', $tx['payment_method']);
-        infoRow($pdf, 'Created Date', convertUTCtoUserTZ($tx['created_date'], ($brand['locale']['timezone'] === '--' || $brand['locale']['timezone'] === '') ? 'Asia/Dhaka' : $brand['locale']['timezone'], "M d, Y h:i A"));
+        infoRow($pdf, 'Created Date', convertUTCtoUserTZ($tx['created_date'], (empty($brand['timezone']) || $brand['timezone'] === '--') ? 'Asia/Dhaka' : $brand['timezone'], "M d, Y h:i A"));
 
         $pdf->Ln(3);
         sectionTitle($pdf, 'Customer Details');
-        infoRow($pdf, 'Name', $tx['customer']['name']);
+        infoRow($pdf, 'Name', pp_dedupeName($tx['customer']['name']));
         infoRow($pdf, 'Email', $tx['customer']['email']);
         infoRow($pdf, 'Mobile', $tx['customer']['mobile']);
 
@@ -2152,6 +2188,25 @@
         $pdf->Cell(0, 6, 'This is a system generated receipt.', 0, 1, 'C');
 
         $pdf->Output('D', 'Receipt-'.$tx['ref'].'.pdf');
+    }
+
+    function pp_dedupeName($name)
+    {
+        $name = trim((string) ($name ?? ''));
+        $tokens = preg_split('/\s+/', $name);
+        $count = count($tokens);
+
+        if ($count >= 2 && $count % 2 === 0) {
+            $half = intval($count / 2);
+            $first  = array_slice($tokens, 0, $half);
+            $second = array_slice($tokens, $half);
+
+            if ($first === $second) {
+                return implode(' ', $first);
+            }
+        }
+
+        return $name;
     }
 
     function sectionTitle($pdf, $title)
@@ -2663,7 +2718,7 @@
                             'copy' => true,
                             'value' => $data['transaction']['local_net_amount'],
                             'vars' => [
-                                '{amount}' => number_format($data['transaction']['local_net_amount'], 2),
+                                '{amount}' => number_format((float)$data['transaction']['local_net_amount'], 2),
                                 '{currency}' => $data['transaction']['local_currency']
                             ]
                         ],

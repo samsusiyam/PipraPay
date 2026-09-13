@@ -1,0 +1,2 @@
+2026-08-14T23:16:11+00:00 | status=true | tab='bank' | slug='--'
+2026-08-14T23:16:11+00:00 | FATAL: number_format(): Argument #1 ($num) must be of type float, string given in /home/hostnibo/pay.hostnibo.com/pp-content/pp-include/pp-functions.php:2723
