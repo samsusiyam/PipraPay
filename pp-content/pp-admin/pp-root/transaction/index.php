@@ -143,7 +143,7 @@
                             <th>Gateway</th>
                             <th>Amount</th>
                             <th>Net Amount</th>
-                            <th>Transaction ID</th>
+                            <th>Transaction Ref / ID</th>
                             <th>Date</th>
                             <th>Status</th>
                             <th></th>
@@ -447,7 +447,10 @@
                                 <td ${redirectEdit}>${item.gateway}</td>
                                 <td ${redirectEdit}>${item.amount}</td>
                                 <td ${redirectEdit}>${item.net_amount}</td>
-                                <td ${redirectEdit}>${item.trx_id}</td>
+                                <td ${redirectEdit}>
+                                    <div class="font-weight-medium text-primary text-truncate" style="max-width: 200px;" title="${item.id}">${item.id}</div>
+                                    ${item.trx_id && item.trx_id.trim() !== '' ? `<div class="text-secondary small font-monospace">Trx: ${item.trx_id}</div>` : ''}
+                                </td>
                                 <td ${redirectEdit}>${item.created_date}</td>
                                 <td ${redirectEdit}><span class="badge bg-${badge} me-1"></span> ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</td>
                                 <td class="text-end">
@@ -514,7 +517,17 @@
         load_data_list(1);
     }
 
-    document.querySelectorAll('.filter-tab-data input, .filter-tab-data select, .search_input, .show_limit').forEach(el => {
+    let searchTimer = null;
+    document.querySelectorAll('.search_input').forEach(el => {
+        el.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                load_data_list(1);
+            }, 300);
+        });
+    });
+
+    document.querySelectorAll('.filter-tab-data input, .filter-tab-data select, .show_limit').forEach(el => {
         el.addEventListener('change', function () {
             load_data_list(1);
         });

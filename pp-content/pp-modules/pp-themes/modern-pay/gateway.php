@@ -491,7 +491,15 @@
                     <label class="form-label text-muted small fw-semibold"><?php echo $data['lang']['language']?></label>
                     <select class="form-select form-select-lg" id="model-languages" onchange="hitLanguage()" style="border-radius: 12px;">
                         <option value="" selected><?php echo $data['lang']['select_a_language']?></option>
-                        <?php foreach ($gateway_info['supported_languages'] ?? [] as $code => $language): ?>
+                        <?php 
+                        $supportedLanguages = !empty($gateway_info['supported_languages']) ? $gateway_info['supported_languages'] : (!empty($data['supported_languages']) ? $data['supported_languages'] : [
+                            'en' => 'English',
+                            'bn' => 'বাংলা',
+                            'hi' => 'हिन्दी',
+                            'ur' => 'اردو',
+                            'ar' => 'العربية',
+                        ]);
+                        foreach ($supportedLanguages as $code => $language): ?>
                             <option value="<?= htmlspecialchars($code) ?>"><?= htmlspecialchars($language) ?></option>
                         <?php endforeach; ?>
                     </select>

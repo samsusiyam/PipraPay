@@ -6729,7 +6729,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     $sql_query = '';
 
                     if ($search_input !== '') {
-                        $sql_query .= " AND ( customer_info LIKE '%$search_input%' OR trx_id LIKE '%$search_input%' OR gateway_slug LIKE '%$search_input%' OR sender LIKE '%$search_input%' )";
+                        $sql_query .= " AND ( ref LIKE '%$search_input%' OR customer_info LIKE '%$search_input%' OR trx_id LIKE '%$search_input%' OR gateway_slug LIKE '%$search_input%' OR sender LIKE '%$search_input%' OR amount LIKE '%$search_input%' )";
                     }
 
                     $sql_limit = '';

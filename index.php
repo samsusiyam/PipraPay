@@ -1160,6 +1160,7 @@
                                         'faqs'   => $faqs,
                                         'options'   => $options,
                                         'lang'   => $lang,
+                                        'supported_languages' => $supported_languages,
                                     ];
 
                                     // Pass to theme to render checkout page
@@ -1443,6 +1444,7 @@
                                         'brand'   => $brandInfo,
                                         'options'   => $options,
                                         'lang'   => $lang,
+                                        'supported_languages' => $supported_languages,
                                     ];
 
                                     // Pass to theme to render checkout page
@@ -1553,6 +1555,7 @@
                                         'brand'   => $brandInfo,
                                         'options'   => $options,
                                         'lang'   => $lang,
+                                        'supported_languages' => $supported_languages,
                                     ];
 
                                     // Pass to theme to render checkout page
@@ -1705,6 +1708,7 @@
                                             'brand'   => $brandInfo,
                                             'options'   => $options,
                                             'lang'   => $lang,
+                                            'supported_languages' => $supported_languages,
                                         ];
 
                                         // Pass to theme to render checkout page

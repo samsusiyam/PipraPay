@@ -460,7 +460,15 @@
                         <div class="form-control-wrap">
                             <select class="form-select" id="model-languages" onchange="hitLanguage()">
                                 <option value="" selected><?php echo $data['lang']['select_a_language']?></option>
-                                <?php foreach ($data['supported_languages'] ?? [] as $code => $language): ?>
+                                <?php 
+                                $supportedLanguages = !empty($data['supported_languages']) ? $data['supported_languages'] : [
+                                    'en' => 'English',
+                                    'bn' => 'বাংলা',
+                                    'hi' => 'हिन्दी',
+                                    'ur' => 'اردو',
+                                    'ar' => 'العربية',
+                                ];
+                                foreach ($supportedLanguages as $code => $language): ?>
                                     <option value="<?= htmlspecialchars($code) ?>"><?= htmlspecialchars($language) ?></option>
                                 <?php endforeach; ?>
                             </select>
