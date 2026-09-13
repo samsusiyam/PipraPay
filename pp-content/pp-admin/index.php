@@ -657,22 +657,20 @@
             });
         }
 
-        var myModalElTWOSTEPVERIFY = document.getElementById('model-my-action-confirmation');
-
-        myModalElTWOSTEPVERIFY.addEventListener('hidden.bs.modal', function () {
-            document.querySelector("#my-action-confirmation-btn").value = '';
-        });
+        var myModalActionConfirmation = document.getElementById('model-my-action-confirmation');
+        if (myModalActionConfirmation) {
+            myModalActionConfirmation.addEventListener('hidden.bs.modal', function () {
+                document.querySelector("#my-action-confirmation-btn").value = '';
+            });
+        }
 
         function show_action_confirmation_tab(btnClass, title, btnTitle, btnColor) {
-            var myModalEl = document.getElementById('model-my-action-confirmation');
-
-            closeAllBootstrapModals();
+            $('.modal.show').not('#model-my-action-confirmation').modal('hide');
 
             document.querySelector(".model-my-action-confirmation-btn-title").innerHTML = title;
             document.querySelector("#model-my-action-confirmation-btn").innerHTML = btnTitle;
 
             const btnClasss = document.getElementById('model-my-action-confirmation-btn');
-
             const keepClasses = ['btn', 'btn-sm'];
 
             btnClasss.classList.forEach(cls => {
@@ -683,17 +681,20 @@
 
             document.querySelector("#model-my-action-confirmation-btn").classList.add(btnColor);
 
-            var button = document.getElementById('model-my-action-confirmation-btn');
-
-            document.querySelector("#my-action-confirmation-btn").value = '.'+btnClass;
+            var selector = btnClass.startsWith('.') ? btnClass : '.' + btnClass;
+            document.querySelector("#my-action-confirmation-btn").value = selector;
 
             $('#model-my-action-confirmation').modal('show');
         }
 
         function my_action_confirmation_btn(){
             var btnClass = document.querySelector("#my-action-confirmation-btn").value;
-
-            document.querySelector(btnClass).click();
+            if (btnClass) {
+                var el = document.querySelector(btnClass);
+                if (el) {
+                    el.click();
+                }
+            }
             document.querySelector("#my-action-confirmation-btn").value = '';
         }
 
