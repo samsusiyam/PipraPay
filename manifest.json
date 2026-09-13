@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.3",
-            "latest_version_code": "3.0.3",
-            "release_notes": "PipraPay v3.0.3 Major Update:\n• Complete UI/UX Overhaul of System Update page with interactive 4-step workflow, animated progress bar, and live logs.\n• Safety Backup Snapshot Management with direct file download & deletion.\n• Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, SMTP Email, SMS Gateway) with strict diagnostic validation and live testing.\n• Pre-flight server health check & PHP compatibility tests.\n• Offline manual update ZIP uploader.\n• Performance improvements and bug fixes.",
+            "latest_version_name": "v3.0.4",
+            "latest_version_code": "3.0.4",
+            "release_notes": "PipraPay v3.0.4 Update:\n• Enhanced 4-step update progress stepper with high-contrast active states.\n• Improved Safety Backup Snapshot actions with dedicated Download & Delete buttons.\n• Smart contextual badge tagging and clean formatting for release notes.\n• Pre-flight server health & PHP compatibility diagnostics.\n• Multi-Channel Notification Engine (Telegram, Discord, WhatsApp, SMTP Email, SMS).\n• Performance optimizations and bug fixes.",
             "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.4",
+                    "version_code": "3.0.4",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.3",
                     "version_code": "3.0.3",
@@ -34,12 +40,18 @@
             ]
         },
         "beta": {
-            "latest_version_name": "v3.0.3-beta",
-            "latest_version_code": "3.0.3",
-            "release_notes": "PipraPay v3.0.3 Major Update:\n• Complete UI/UX Overhaul of System Update page with interactive 4-step workflow, animated progress bar, and live logs.\n• Safety Backup Snapshot Management with direct file download & deletion.\n• Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, SMTP Email, SMS Gateway) with strict diagnostic validation and live testing.\n• Pre-flight server health check & PHP compatibility tests.\n• Offline manual update ZIP uploader.\n• Performance improvements and bug fixes.",
+            "latest_version_name": "v3.0.4-beta",
+            "latest_version_code": "3.0.4",
+            "release_notes": "PipraPay v3.0.4 Update:\n• Enhanced 4-step update progress stepper with high-contrast active states.\n• Improved Safety Backup Snapshot actions with dedicated Download & Delete buttons.\n• Smart contextual badge tagging and clean formatting for release notes.\n• Pre-flight server health & PHP compatibility diagnostics.\n• Multi-Channel Notification Engine (Telegram, Discord, WhatsApp, SMTP Email, SMS).\n• Performance optimizations and bug fixes.",
             "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.4-beta",
+                    "version_code": "3.0.4",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.3-beta",
                     "version_code": "3.0.3",
