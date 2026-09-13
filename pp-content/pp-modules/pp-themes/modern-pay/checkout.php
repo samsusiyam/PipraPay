@@ -147,20 +147,25 @@
         .mp-amount-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 5px 14px;
+            justify-content: center;
+            gap: 5px;
+            padding: 5px 12px;
             background: #f1f5f9;
             border-radius: 20px;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: #334155;
             border: 1px solid #e2e8f0;
+            white-space: nowrap;
+            flex-shrink: 1;
+            min-width: 0;
         }
 
         .mp-amount-badge span.amount {
             color: var(--mp-primary);
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 800;
+            white-space: nowrap;
         }
 
         .mp-icon-btn:hover {
@@ -470,6 +475,61 @@
         .mp-lang-card:hover .mp-lang-radio-circle {
             border-color: var(--mp-primary);
         }
+
+        @media (max-width: 576px) {
+            body { padding: 8px 4px; }
+            .mp-card { border-radius: 16px; }
+            .mp-topbar {
+                padding: 10px 10px;
+                gap: 6px;
+            }
+            .mp-icon-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 9px;
+            }
+            .mp-icon-btn svg {
+                width: 15px;
+                height: 15px;
+            }
+            .mp-topbar-actions {
+                gap: 4px !important;
+            }
+            .mp-amount-badge {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+                gap: 3px;
+            }
+            .mp-amount-badge span.amount {
+                font-size: 0.82rem;
+            }
+            .mp-body { padding: 18px 12px; }
+        }
+
+        @media (max-width: 380px) {
+            .mp-topbar {
+                padding: 8px 6px;
+                gap: 4px;
+            }
+            .mp-icon-btn {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+            }
+            .mp-amount-badge {
+                padding: 3px 6px;
+                font-size: 0.7rem;
+            }
+            .mp-amount-badge span.amount {
+                font-size: 0.76rem;
+            }
+            .mp-amount-badge .mp-amount-label {
+                display: none;
+            }
+            .mp-topbar-actions {
+                gap: 3px !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -483,11 +543,11 @@
                 </div>
                 
                 <div class="mp-amount-badge">
-                    <span><?php echo $data['lang']['amount'] ?? 'Amount'; ?>:</span>
+                    <span class="mp-amount-label"><?php echo $data['lang']['amount'] ?? 'Amount'; ?>:</span>
                     <span class="amount"><?php echo money_round($data['transaction']['amount'] ?? 0, 2); ?> <?php echo htmlspecialchars($data['transaction']['currency'] ?? 'BDT'); ?></span>
                 </div>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 mp-topbar-actions">
                     <div class="mp-icon-btn tab-trigger" data-tab="support" title="<?php echo $data['lang']['support']?>">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 15a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2l0 -3" /><path d="M15 15a2 2 0 0 1 2 -2h1a2 2 0 0 1 2 2v3a2 2 0 0 1 -2 2h-1a2 2 0 0 1 -2 -2l0 -3" /><path d="M4 15v-3a8 8 0 0 1 16 0v3" /></svg>
                     </div>
