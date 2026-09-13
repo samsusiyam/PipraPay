@@ -594,19 +594,19 @@
                     <div class="card p-3 border rounded-3 mb-0" style="background: #ffffff;">
                         <ul class="list-unstyled mp-info-list mb-0">
                             <li>
-                                <span class="text-muted"><?php echo $data['lang']['currency']?></span>
+                                <span class="text-muted"><?php echo $data['lang']['currency'] ?? 'Currency'; ?></span>
                                 <span class="fw-bold"><?php echo htmlspecialchars($data['transaction']['currency']); ?></span>
                             </li>
                             <li>
-                                <span class="text-muted"><?php echo $data['lang']['subtotal']?></span>
+                                <span class="text-muted"><?php echo $data['lang']['subtotal'] ?? 'Subtotal'; ?></span>
                                 <span class="fw-semibold"><?php echo money_round(($data['transaction']['amount'] ?? 0) - ($data['transaction']['discount_amount'] ?? 0), 2) . ' ' . $data['transaction']['currency']; ?></span>
                             </li>
                             <li>
-                                <span class="text-muted"><?php echo $data['lang']['discount']?></span>
+                                <span class="text-muted"><?php echo $data['lang']['discount'] ?? 'Discount'; ?></span>
                                 <span class="fw-semibold"><?php echo money_round($data['transaction']['discount_amount'] ?? 0, 2) . ' ' . $data['transaction']['currency']; ?></span>
                             </li>
                             <li>
-                                <span class="text-muted"><?php echo $data['lang']['total']?></span>
+                                <span class="text-muted"><?php echo $data['lang']['total'] ?? 'Total'; ?></span>
                                 <span class="fw-bold" style="color: var(--mp-primary);"><?php echo money_round($data['transaction']['amount'], 2) . ' ' . $data['transaction']['currency']; ?></span>
                             </li>
                         </ul>
