@@ -5061,7 +5061,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                             insertData($db_prefix.'api', $columns, $values);
 
-                            echo json_encode(['status' => 'true', 'title' => 'Api Created', 'message' => 'The api has been created successfully.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'true', 'title' => 'API Created', 'message' => 'The API key has been created successfully.', 'csrf_token' => $new_csrf_token]);
                         }
                     }
                 }else{
@@ -5286,9 +5286,9 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             }
                         }
 
-                        echo json_encode(['status' => 'true', 'title' => 'Api Key '.$actionID, 'message' => 'The selected api key have been '.$actionID.' successfully.', 'csrf_token' => $new_csrf_token]);
+                        echo json_encode(['status' => 'true', 'title' => 'API Key '.$actionID, 'message' => 'The selected API keys have been '.$actionID.' successfully.', 'csrf_token' => $new_csrf_token]);
                     } else {
-                        echo json_encode(['status' => 'false', 'title' => 'Api Key Failed', 'message' => 'No api selected.' , 'csrf_token' => $new_csrf_token]);
+                        echo json_encode(['status' => 'false', 'title' => 'API Key Failed', 'message' => 'No API key selected.' , 'csrf_token' => $new_csrf_token]);
                     }
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
@@ -5321,7 +5321,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         deleteData($db_prefix.'api', $condition);
                     }
 
-                    echo json_encode(['status' => 'true', 'title' => 'Api Key Deleted', 'message' => 'The selected api key have been deleted successfully.', 'csrf_token' => $new_csrf_token]);
+                    echo json_encode(['status' => 'true', 'title' => 'API Key Deleted', 'message' => 'The selected API key has been deleted successfully.', 'csrf_token' => $new_csrf_token]);
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                 }
@@ -5386,7 +5386,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             
                             updateData($db_prefix.'api', $columns, $values, $condition);
 
-                            echo json_encode(['status' => 'true', 'title' => 'Api Updated', 'message' => 'The api has been updated successfully.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode(['status' => 'true', 'title' => 'API Updated', 'message' => 'The API key has been updated successfully.', 'csrf_token' => $new_csrf_token]);
                         }else{
                             echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                         }

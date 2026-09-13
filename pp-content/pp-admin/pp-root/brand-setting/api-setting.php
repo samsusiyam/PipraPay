@@ -32,10 +32,10 @@
                 <div class="page-pretitle">
                     <ol class="breadcrumb breadcrumb-arrow mb-0">
                         <li class="breadcrumb-item"><a href="javascript:void(0)" onclick="load_content('Brand Settings','<?php echo $site_url.$path_admin ?>/brand-setting','nav-item-brand-setting')">Brand Settings</a></li>
-                        <li class="breadcrumb-item active"><a href="javascript:void(0)">Api Settings</a></li>
+                        <li class="breadcrumb-item active"><a href="javascript:void(0)">API Settings</a></li>
                     </ol>
                 </div>
-                <h2 class="page-title">Api Settings</h2>
+                <h2 class="page-title">API Settings</h2>
             </div>
 
             <div class="col-auto ms-auto d-print-none">
@@ -45,7 +45,7 @@
                     <span>
                         <a href="https://piprapay.readme.io/" target="blank" class="btn btn-secondary btn-5 d-none d-sm-inline-block">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /></svg>
-                            Api Docs
+                            API Docs
                         </a>
                         <a href="https://piprapay.readme.io/" target="blank" class="btn btn-secondary btn-6 d-sm-none btn-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /></svg>
@@ -55,7 +55,7 @@
                     <span data-bs-target="#modal-apiEndPoint" data-bs-toggle="modal">
                         <a href="javascript:void(0)" class="btn btn-5 d-none d-sm-inline-block">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-transform-point-bottom-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M3 18a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" fill="currentColor" /><path d="M17 4a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M17 18a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M11 5h2" /><path d="M5 11v2" /><path d="M19 11v2" /><path d="M11 19h2" /></svg>
-                            Api Endpoints
+                            API Endpoints
                         </a>
                         <a href="javascript:void(0)" class="btn btn-6 d-sm-none btn-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-transform-point-bottom-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M3 18a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" fill="currentColor" /><path d="M17 4a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M17 18a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -2" /><path d="M11 5h2" /><path d="M5 11v2" /><path d="M19 11v2" /><path d="M11 19h2" /></svg>
@@ -65,7 +65,7 @@
                     <span data-bs-target="#modal-createItem" data-bs-toggle="modal" class="<?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'api_settings', 'create', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>">
                         <a href="javascript:void(0)" class="btn btn-primary btn-5 d-none d-sm-inline-block">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                            Create Api
+                            Create API Key
                         </a>
                         <a href="javascript:void(0)" class="btn btn-primary btn-6 d-sm-none btn-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
@@ -152,7 +152,7 @@
                         <tr>
                             <th class="w-1"><input class="form-check-input m-0 align-middle select-all" type="checkbox" aria-label="Select all invoices"></th>
                             <th>Name</th>
-                            <th>Api Key</th>
+                            <th>API Key</th>
                             <th>Created Date</th>
                             <th>Status</th>
                             <th></th>
@@ -214,7 +214,7 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Api Endpoints</h5>
+            <h5 class="modal-title">API Endpoints</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -287,14 +287,14 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">New Api Key</h5>
+            <h5 class="modal-title">New API Key</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <div class="row mb-3 g-3">
               <div class="col-lg-6">
                 <label class="form-label">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" name="api-name" placeholder="Api name">
+                <input type="text" class="form-control" name="api-name" placeholder="API name">
               </div>
 
               <div class="col-lg-6">
@@ -303,7 +303,7 @@
               </div>
 
               <div class="col-lg-12">
-                <label class="form-label">Api Scopes</label>
+                <label class="form-label">API Scopes</label>
 
                 <div class="card">
                     <div class="card-body">
@@ -355,7 +355,7 @@
                     </span>
                     <span class="form-selectgroup-label-content">
                       <span class="form-selectgroup-title strong mb-1">Active</span>
-                      <span class="d-block text-secondary">If <strong>Active</strong>, this api can initiate payments.</span>
+                      <span class="d-block text-secondary">If <strong>Active</strong>, this API key can initiate payments.</span>
                     </span>
                   </span>
                 </label>
@@ -369,7 +369,7 @@
                     </span>
                     <span class="form-selectgroup-label-content">
                       <span class="form-selectgroup-title strong mb-1">Inactive</span>
-                      <span class="d-block text-secondary">If <strong>Inactive</strong>, this api can't initiate payments.</span>
+                      <span class="d-block text-secondary">If <strong>Inactive</strong>, this API key can't initiate payments.</span>
                     </span>
                   </span>
                 </label>
@@ -388,7 +388,7 @@
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Edit Api Key</h5>
+            <h5 class="modal-title">Edit API Key</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
@@ -396,7 +396,7 @@
               <div class="col-lg-6">
                 <label class="form-label">Name <span class="text-danger">*</span></label>
                 <input type="hidden" name="api-id">
-                <input type="text" class="form-control" name="api-name" placeholder="Api name">
+                <input type="text" class="form-control" name="api-name" placeholder="API name">
               </div>
 
               <div class="col-lg-6">
@@ -405,7 +405,7 @@
               </div>
 
               <div class="col-lg-12">
-                <label class="form-label">Api Scopes</label>
+                <label class="form-label">API Scopes</label>
 
                 <div class="card">
                     <div class="card-body">
@@ -457,7 +457,7 @@
                     </span>
                     <span class="form-selectgroup-label-content">
                       <span class="form-selectgroup-title strong mb-1">Active</span>
-                      <span class="d-block text-secondary">If <strong>Active</strong>, this api can initiate payments.</span>
+                      <span class="d-block text-secondary">If <strong>Active</strong>, this API key can initiate payments.</span>
                     </span>
                   </span>
                 </label>
@@ -471,7 +471,7 @@
                     </span>
                     <span class="form-selectgroup-label-content">
                       <span class="form-selectgroup-title strong mb-1">Inactive</span>
-                      <span class="d-block text-secondary">If <strong>Inactive</strong>, this api can't initiate payments.</span>
+                      <span class="d-block text-secondary">If <strong>Inactive</strong>, this API key can't initiate payments.</span>
                     </span>
                   </span>
                 </label>
@@ -664,7 +664,7 @@
                 }
             });
         }else{
-            show_action_confirmation_tab(btnClass, 'Delete Api Key', 'Delete', 'btn-danger');
+            show_action_confirmation_tab(btnClass, 'Delete API Key', 'Delete', 'btn-danger');
         }
     }
 
@@ -726,7 +726,7 @@
                                 <td>
                                     <div class="input-group" style=" max-width: 250px; min-width: 250px; ">
                                        <input type="text" value="${item.api_key}" class="form-control" readonly>
-                                       <button class="btn btn-icon" type="button" onclick="copyContent('${item.api_key}', 'Copied!', 'Api Key copied successfully.')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg></button>
+                                       <button class="btn btn-icon" type="button" onclick="copyContent('${item.api_key}', 'Copied!', 'API Key copied successfully.')"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg></button>
                                     </div>
                                 </td>
                                 <td ${redirectEdit}>${item.created_date}</td>

@@ -30,7 +30,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-4 <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_general', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="load_content('System Settings','<?php echo $site_url.$path_admin ?>/system-settings/geneal','nav-item-system-settings')"  style="cursor: pointer;">
+                    <div class="col-md-4 <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_general', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="load_content('General Settings','<?php echo $site_url.$path_admin ?>/system-settings/general','nav-item-system-settings')"  style="cursor: pointer;">
                         <div class="card h-100">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -42,7 +42,7 @@
                                     <!-- Text -->
                                     <div class="ms-3">
                                         <h5 class="card-title m-0 mb-1 fw-medium text-primary" style=" margin-top: -3px !important; ">
-                                            Geneal Setting
+                                            General Settings
                                         </h5>
                                         <p class="m-0 text-dark">Manage essential system preferences and core configurations.</p>
                                     </div>

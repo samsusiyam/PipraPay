@@ -42,7 +42,7 @@
                                     <!-- Text -->
                                     <div class="ms-3">
                                         <h5 class="card-title m-0 mb-1 fw-medium text-primary" style=" margin-top: -3px !important; ">
-                                            Geneal Setting
+                                            General Settings
                                         </h5>
                                         <p class="m-0 text-dark">Manage brand details, system preferences, and basic configuration.</p>
                                     </div>
@@ -51,7 +51,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4 <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'api_settings', 'view', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="load_content('Api Settings','<?php echo $site_url.$path_admin ?>/brand-setting/api-setting','nav-item-brand-setting')" style="cursor: pointer;">
+                    <div class="col-md-4 <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'api_settings', 'view', $global_user_response['response'][0]['role']) ? '' : 'd-none' ?>" onclick="load_content('API Settings','<?php echo $site_url.$path_admin ?>/brand-setting/api-setting','nav-item-brand-setting')" style="cursor: pointer;">
                         <div class="card h-100">
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
@@ -63,7 +63,7 @@
                                     <!-- Text -->
                                     <div class="ms-3">
                                         <h5 class="card-title m-0 mb-1 fw-medium text-primary" style=" margin-top: -3px !important; ">
-                                            Api Settings
+                                            API Settings
                                         </h5>
                                         <p class="m-0 text-dark">Configure API keys, tokens, and access permissions.</p>
                                     </div>
