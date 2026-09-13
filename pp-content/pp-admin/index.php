@@ -1020,8 +1020,14 @@
         }
 
         window.addEventListener("popstate", function(event) {
-            if (event.state) {
-                load_content(event.state.page, event.state.path, event.state.nav_id, true);
+            if (event.state && event.state.path) {
+                load_content(event.state.page || 'PipraPay', event.state.path, event.state.nav_id || '', true);
+            } else {
+                let currentUrl = window.location.href;
+                const cleanPath = getAdminPath(currentUrl);
+                let pageTitle = cleanPath.split('/').map(segment => segment.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase())).join(' - ') || 'Dashboard';
+                let nav_id = 'nav-item-' + (cleanPath.split('/')[0] || 'dashboard');
+                load_content(pageTitle, currentUrl, nav_id, true);
             }
         });
 
@@ -1040,7 +1046,13 @@
 
             let nav_id = 'nav-item-' + (cleanPath.split('/')[0] || 'dashboard');
 
-            load_content(pageTitle, currentUrl, nav_id);
+            history.replaceState({ 
+                page: pageTitle, 
+                path: currentUrl, 
+                nav_id: nav_id 
+            }, "", currentUrl);
+
+            load_content(pageTitle, currentUrl, nav_id, true);
         });
     </script>
 </body>

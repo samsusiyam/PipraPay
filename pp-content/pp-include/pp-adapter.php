@@ -9640,17 +9640,17 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 ?> 
             <script>
                 function initPendingTrs(){
-                    <?php
-                        if($initPendingTrscount == 0){
-                    ?>
-                           document.querySelector(".nav-item-transaction .bg-danger").style.display = 'none';
-                    <?php
-                        }else{
-                    ?>
-                           document.querySelector(".nav-item-transaction .bg-danger").innerHTML = '<?= $initPendingTrscount ?>';
-                    <?php
-                        }
-                    ?>
+                    var el = document.querySelector(".nav-item-transaction .bg-danger");
+                    if (el) {
+                        <?php if($initPendingTrscount == 0){ ?>
+                           el.style.display = 'none';
+                           el.classList.add('d-none');
+                        <?php }else{ ?>
+                           el.style.display = '';
+                           el.classList.remove('d-none');
+                           el.innerHTML = '<?= $initPendingTrscount ?>';
+                        <?php } ?>
+                    }
                 }
                 initPendingTrs();
             </script>

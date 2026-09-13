@@ -143,7 +143,8 @@
                             <th>Gateway</th>
                             <th>Amount</th>
                             <th>Net Amount</th>
-                            <th>Transaction Ref / ID</th>
+                            <th>Transaction Ref</th>
+                            <th>Gateway Trx ID</th>
                             <th>Date</th>
                             <th>Status</th>
                             <th></th>
@@ -393,7 +394,7 @@
 
         let html = '';
 
-        $(".table-data-list").html('<tr><td colspan="5" class="text-center text-muted"><div class="spinner-border text-primary" style="margin: 50px;">  <span class="visually-hidden">Loading...</span></div></td></tr>');
+        $(".table-data-list").html('<tr><td colspan="10" class="text-center text-muted"><div class="spinner-border text-primary" style="margin: 50px;">  <span class="visually-hidden">Loading...</span></div></td></tr>');
 
         $.ajax({
             type: 'POST',
@@ -448,8 +449,10 @@
                                 <td ${redirectEdit}>${item.amount}</td>
                                 <td ${redirectEdit}>${item.net_amount}</td>
                                 <td ${redirectEdit}>
-                                    <div class="font-weight-medium text-primary text-truncate" style="max-width: 200px;" title="${item.id}">${item.id}</div>
-                                    ${item.trx_id && item.trx_id.trim() !== '' ? `<div class="text-secondary small font-monospace">Trx: ${item.trx_id}</div>` : ''}
+                                    <span class="badge bg-blue-lt font-monospace text-truncate" style="max-width: 190px; display: inline-block; vertical-align: middle;" title="${item.id}">${item.id}</span>
+                                </td>
+                                <td ${redirectEdit}>
+                                    ${item.trx_id && item.trx_id.trim() !== '' && item.trx_id !== '--' ? `<span class="badge bg-purple-lt font-monospace">${item.trx_id}</span>` : '<span class="text-muted">--</span>'}
                                 </td>
                                 <td ${redirectEdit}>${item.created_date}</td>
                                 <td ${redirectEdit}><span class="badge bg-${badge} me-1"></span> ${item.status.charAt(0).toUpperCase() + item.status.slice(1)}</td>
@@ -474,7 +477,7 @@
 
                     $(".table-data-list-pagination").html(res.pagination);
                 } else {
-                    html = `<td colspan="7" class="text-center text-muted"> <div style="margin: 50px;"> <center> <svg xmlns="http://www.w3.org/2000/svg" style=" width: 40px; height: 40px; " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mood-cry"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 10l.01 0" /><path d="M15 10l.01 0" /><path d="M9.5 15.25a3.5 3.5 0 0 1 5 0" /><path d="M17.566 17.606a2 2 0 1 0 2.897 .03l-1.463 -1.636l-1.434 1.606z" /><path d="M20.865 13.517a8.937 8.937 0 0 0 .135 -1.517a9 9 0 1 0 -9 9c.69 0 1.36 -.076 2 -.222" /></svg> <p style=" font-weight: 600; font-size: 16px; margin-top: 7px; margin-bottom: 3px; ">`+res.title+`</p> <p style=" margin: 0; ">`+res.message+`</p> </center> </div> </td>`;
+                    html = `<td colspan="10" class="text-center text-muted"> <div style="margin: 50px;"> <center> <svg xmlns="http://www.w3.org/2000/svg" style=" width: 40px; height: 40px; " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mood-cry"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 10l.01 0" /><path d="M15 10l.01 0" /><path d="M9.5 15.25a3.5 3.5 0 0 1 5 0" /><path d="M17.566 17.606a2 2 0 1 0 2.897 .03l-1.463 -1.636l-1.434 1.606z" /><path d="M20.865 13.517a8.937 8.937 0 0 0 .135 -1.517a9 9 0 1 0 -9 9c.69 0 1.36 -.076 2 -.222" /></svg> <p style=" font-weight: 600; font-size: 16px; margin-top: 7px; margin-bottom: 3px; ">`+res.title+`</p> <p style=" margin: 0; ">`+res.message+`</p> </center> </div> </td>`;
                     $(".table-data-list").html(html);
                     document.querySelector(".table-data-list-entries").innerHTML = 'Showing <strong>0 to 0</strong> of <strong>0 entries</strong>';
 

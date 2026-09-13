@@ -377,20 +377,98 @@
             color: var(--mp-primary);
         }
 
-        @media (max-width: 576px) {
-            body {
-                padding: 10px 6px;
-            }
-            .mp-card {
-                border-radius: 16px;
-            }
-            .mp-body {
-                padding: 18px 14px;
-            }
-            .mp-nav-btn {
-                padding: 8px 8px;
-                font-size: 0.8rem;
-            }
+        /* Modern Language Selector Modal */
+        .mp-lang-modal .modal-content {
+            border-radius: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+            overflow: hidden;
+            background: #ffffff;
+        }
+        .mp-lang-icon-wrap {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: <?php echo pp_hexToRgba($primaryColor, 0.1); ?>;
+            color: var(--mp-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .mp-lang-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .mp-lang-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .mp-lang-card:hover {
+            background: #ffffff;
+            border-color: var(--mp-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px <?php echo pp_hexToRgba($primaryColor, 0.12); ?>;
+        }
+        .mp-lang-card.active {
+            background: <?php echo pp_hexToRgba($primaryColor, 0.06); ?>;
+            border-color: var(--mp-primary);
+            box-shadow: 0 0 0 1px var(--mp-primary);
+        }
+        .mp-lang-card-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .mp-lang-flag {
+            font-size: 24px;
+            line-height: 1;
+            display: inline-block;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+        }
+        .mp-lang-native {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .mp-lang-english {
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        .mp-lang-check {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mp-lang-card.active .mp-lang-check {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--mp-primary);
+            color: #ffffff;
+        }
+        .mp-lang-radio-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            transition: all 0.2s;
+        }
+        .mp-lang-card:hover .mp-lang-radio-circle {
+            border-color: var(--mp-primary);
         }
     </style>
 </head>
@@ -654,18 +732,32 @@
     </div>
 
     <!-- Language Selector Modal -->
-    <div class="modal fade" id="modal-language" tabindex="-1" aria-hidden="true">
+    <div class="modal fade mp-lang-modal" id="modal-language" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 18px; border: 1px solid #e2e8f0;">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold"><?php echo $data['lang']['select_language']?></h5>
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-2 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="mp-lang-icon-wrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M3.6 9h16.8" /><path d="M3.6 15h16.8" /><path d="M11.5 3a17 17 0 0 0 0 18" /><path d="M12.5 3a17 17 0 0 1 0 18" /></svg>
+                        </div>
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-dark"><?php echo $data['lang']['select_language'] ?? 'Select Language'; ?></h5>
+                            <p class="text-muted small mb-0 mt-1"><?php echo $data['lang']['select_a_language'] ?? 'Choose your preferred language'; ?></p>
+                        </div>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body py-4">
-                    <label class="form-label text-muted small fw-semibold"><?php echo $data['lang']['language']?></label>
-                    <select class="form-select form-select-lg" id="model-languages" onchange="hitLanguage()" style="border-radius: 12px;">
-                        <option value="" selected><?php echo $data['lang']['select_a_language']?></option>
-                        <?php 
+                <div class="modal-body p-4 pt-2">
+                    <div class="mp-lang-grid">
+                        <?php
+                        $currentLang = $_SESSION['ui_language'] ?? ($data['brand']['locale']['language'] ?? 'en');
+                        $languagesMeta = [
+                            'en' => ['name' => 'English', 'native' => 'English', 'flag' => '🇺🇸', 'code' => 'EN', 'sub' => 'Default'],
+                            'bn' => ['name' => 'Bangla', 'native' => 'বাংলা', 'flag' => '🇧🇩', 'code' => 'BN', 'sub' => 'Bengali'],
+                            'hi' => ['name' => 'Hindi', 'native' => 'हिन्दी', 'flag' => '🇮🇳', 'code' => 'HI', 'sub' => 'Hindi'],
+                            'ur' => ['name' => 'Urdu', 'native' => 'اردو', 'flag' => '🇵🇰', 'code' => 'UR', 'sub' => 'Urdu'],
+                            'ar' => ['name' => 'Arabic', 'native' => 'العربية', 'flag' => '🇸🇦', 'code' => 'AR', 'sub' => 'Arabic'],
+                        ];
                         $supportedLanguages = !empty($data['supported_languages']) ? $data['supported_languages'] : [
                             'en' => 'English',
                             'bn' => 'বাংলা',
@@ -673,10 +765,28 @@
                             'ur' => 'اردو',
                             'ar' => 'العربية',
                         ];
-                        foreach ($supportedLanguages as $code => $language): ?>
-                            <option value="<?= htmlspecialchars($code) ?>"><?= htmlspecialchars($language) ?></option>
+                        foreach ($supportedLanguages as $code => $label):
+                            $meta = $languagesMeta[$code] ?? ['name' => $label, 'native' => $label, 'flag' => '🌐', 'code' => strtoupper($code), 'sub' => $label];
+                            $isActive = ($currentLang === $code);
+                        ?>
+                            <div class="mp-lang-card <?= $isActive ? 'active' : '' ?>" onclick="selectModernLanguage('<?= htmlspecialchars($code) ?>')">
+                                <div class="mp-lang-card-left">
+                                    <span class="mp-lang-flag"><?= $meta['flag'] ?></span>
+                                    <div class="mp-lang-info">
+                                        <div class="mp-lang-native"><?= htmlspecialchars($meta['native']) ?></div>
+                                        <div class="mp-lang-english"><?= htmlspecialchars($meta['sub']) ?></div>
+                                    </div>
+                                </div>
+                                <div class="mp-lang-check">
+                                    <?php if ($isActive): ?>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                                    <?php else: ?>
+                                        <div class="mp-lang-radio-circle"></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
-                    </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -730,9 +840,15 @@
             }
         });
 
+        function selectModernLanguage(code) {
+            if (code) {
+                location.href = '?lang=' + code;
+            }
+        }
+
         function hitLanguage() {
-            var language = document.querySelector("#model-languages").value;
-            if (language !== "") {
+            var language = document.querySelector("#model-languages")?.value;
+            if (language) {
                 location.href = '?lang=' + language;
             }
         }
