@@ -4039,9 +4039,41 @@
     }
 
     function pp_fetch_update_manifest() {
+        // 1. Try GitHub Contents API (Instant & Uncached)
+        $apiUrls = [
+            'https://api.github.com/repos/samsusiyam/PipraPay/contents/manifest.json',
+            'https://api.github.com/repos/PipraPay/PipraPay/contents/manifest.json'
+        ];
+
+        foreach ($apiUrls as $apiUrl) {
+            if (function_exists('curl_init')) {
+                $ch = curl_init($apiUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'PipraPay-Updater/3.0');
+                $response = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($httpCode === 200 && !empty($response)) {
+                    $apiData = json_decode($response, true);
+                    if (!empty($apiData['content'])) {
+                        $rawJson = base64_decode($apiData['content']);
+                        $decoded = json_decode($rawJson, true);
+                        if (is_array($decoded) && isset($decoded['channels'])) {
+                            return $decoded;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Fallback to Raw GitHub URL
+        $ts = time();
         $urls = [
-            'https://raw.githubusercontent.com/samsusiyam/PipraPay/main/manifest.json',
-            'https://raw.githubusercontent.com/PipraPay/PipraPay/main/manifest.json'
+            'https://raw.githubusercontent.com/samsusiyam/PipraPay/main/manifest.json?t=' . $ts,
+            'https://raw.githubusercontent.com/PipraPay/PipraPay/main/manifest.json?t=' . $ts
         ];
 
         foreach ($urls as $url) {
@@ -4065,7 +4097,7 @@
             }
         }
 
-        // Fallback to local manifest if available
+        // 3. Fallback to local manifest if available
         $localPath = __DIR__ . '/../../manifest.json';
         if (file_exists($localPath)) {
             $localContent = file_get_contents($localPath);
