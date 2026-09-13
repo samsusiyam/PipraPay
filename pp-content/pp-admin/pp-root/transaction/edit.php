@@ -433,6 +433,7 @@ if (!defined('PipraPay_INIT')) {
                     <div class="form-control-wrap">
                         <select class="form-select" id="model-bulkActionID">
                             <option value="" selected>Select a Action</option>
+                            <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'edit', $global_user_response['response'][0]['role']) ? '<option value="pending">Mark as Pending</option>' : '' ?>
                             <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'approve', $global_user_response['response'][0]['role']) ? '<option value="approved">Approve</option>' : '' ?>
                             <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'cancel', $global_user_response['response'][0]['role']) ? '<option value="canceled">Cancel</option>' : '' ?>
                             <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'refund', $global_user_response['response'][0]['role']) ? '<option value="refunded">Refund</option>' : '' ?>

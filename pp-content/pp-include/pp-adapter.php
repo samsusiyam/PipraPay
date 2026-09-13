@@ -6868,6 +6868,18 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                         }
                                     }
 
+                                    if($actionID == "pending"){
+                                        if (hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'edit', $global_user_response['response'][0]['role'])) {
+                                            $columns = ['status', 'updated_date'];
+                                            $values = ['pending', getCurrentDatetime('Y-m-d H:i:s')];
+
+                                            $condition = "ref = '".$itemID."'"; 
+                                            
+                                            updateData($db_prefix.'transaction', $columns, $values, $condition);
+                                            $response_brand['response'][0]['status'] = 'pending';
+                                        }
+                                    }
+
                                     if($actionID == "refunded"){
                                         if (hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'transaction', 'refund', $global_user_response['response'][0]['role'])) {
                                             $transactionRow = $response_brand['response'][0];
@@ -7001,7 +7013,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                         }
                                     }
 
-                                    if($actionID == "refunded" || $actionID == "canceled" || $actionID == "approved"){
+                                    if($actionID == "refunded" || $actionID == "canceled" || $actionID == "approved" || $actionID == "pending"){
                                         $metadata = json_decode($response_brand['response'][0]['metadata'], true) ?: [];
 
                                         $response_gateway = json_decode(getData($db_prefix.'gateways',' WHERE brand_id ="'.$global_response_brand['response'][0]['brand_id'].'" AND gateway_id = "'.$response_brand['response'][0]['gateway_id'].'"'),true);
