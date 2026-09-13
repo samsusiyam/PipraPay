@@ -113,13 +113,38 @@
                 $status = strtolower($data['transaction']['status'] ?? 'pending');
 
                 $statusMap = [
-                    'completed' => ['text' => $data['lang']['payment_successful'], 'color' => 'success', 'icon' => 'check-circle-fill'],
-                    'pending'   => ['text' => $data['lang']['payment_pending'], 'color' => 'warning', 'icon' => 'hourglass-split'],
-                    'refunded'  => ['text' => $data['lang']['payment_refunded'], 'color' => 'info', 'icon' => 'arrow-counterclockwise'],
-                    'canceled'  => ['text' => $data['lang']['payment_canceled'], 'color' => 'danger', 'icon' => 'x-circle-fill'],
+                    'completed' => [
+                        'text' => $data['lang']['payment_successful'] ?? 'Payment Successful!', 
+                        'label' => $data['lang']['status_completed'] ?? ($data['lang']['badge_paid'] ?? 'Completed'),
+                        'color' => 'success', 
+                        'icon' => 'check-circle-fill'
+                    ],
+                    'pending'   => [
+                        'text' => $data['lang']['payment_pending'] ?? 'Payment Processing', 
+                        'label' => $data['lang']['status_pending'] ?? 'Pending',
+                        'color' => 'warning', 
+                        'icon' => 'hourglass-split'
+                    ],
+                    'refunded'  => [
+                        'text' => $data['lang']['payment_refunded'] ?? 'Payment Refunded', 
+                        'label' => $data['lang']['status_refunded'] ?? ($data['lang']['badge_refunded'] ?? 'Refunded'),
+                        'color' => 'info', 
+                        'icon' => 'arrow-counterclockwise'
+                    ],
+                    'canceled'  => [
+                        'text' => $data['lang']['payment_canceled'] ?? 'Payment Canceled', 
+                        'label' => $data['lang']['status_canceled'] ?? ($data['lang']['badge_canceled'] ?? 'Canceled'),
+                        'color' => 'danger', 
+                        'icon' => 'x-circle-fill'
+                    ],
                 ];
 
-                $currentStatus = $statusMap[$status] ?? $statusMap['pending'];
+                $currentStatus = $statusMap[$status] ?? [
+                    'text' => ucfirst($status),
+                    'label' => $data['lang']['status_' . $status] ?? ucfirst($status),
+                    'color' => 'primary',
+                    'icon' => 'info-circle'
+                ];
                 ?>
 
                 <div class="mb-4 mt-4">
@@ -192,7 +217,7 @@
                             </tr>
                             <tr>
                                 <th><?php echo $data['lang']['status']?></th>
-                                <td><span class="text-<?php echo $currentStatus['color']; ?>"><?php echo ucfirst($status); ?></span></td>
+                                <td><span class="text-<?php echo $currentStatus['color']; ?> fw-bold"><?php echo $currentStatus['label']; ?></span></td>
                             </tr>
                         </tbody>
                     </table>

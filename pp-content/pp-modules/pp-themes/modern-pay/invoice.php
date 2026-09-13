@@ -341,7 +341,7 @@
                 </div>
                 <div class="col-sm-4">
                     <div class="text-muted small fw-semibold text-uppercase"><?php echo $data['lang']['payment_method']?></div>
-                    <div class="fw-bold text-dark mt-1"><?php echo ($data['invoice']['status'] == "paid") ? htmlspecialchars($data['invoice']['gateway'] ?? 'N/A') : 'Pending'; ?></div>
+                    <div class="fw-bold text-dark mt-1"><?php echo ($data['invoice']['status'] == "paid") ? htmlspecialchars($data['invoice']['gateway'] ?? 'N/A') : ($data['lang']['status_pending'] ?? 'Pending'); ?></div>
                 </div>
             </div>
 

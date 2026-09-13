@@ -385,32 +385,42 @@
 
                 $statusMap = [
                     'completed' => [
-                        'text' => $data['lang']['payment_successful'], 
+                        'text' => $data['lang']['payment_successful'] ?? 'Payment Successful!', 
+                        'label' => $data['lang']['status_completed'] ?? ($data['lang']['badge_paid'] ?? 'Completed'),
                         'class' => 'status-completed', 
                         'textColor' => '#16a34a',
-                        'desc' => $data['lang']['change_status_completed']
+                        'desc' => $data['lang']['change_status_completed'] ?? ''
                     ],
                     'pending'   => [
-                        'text' => $data['lang']['payment_pending'], 
+                        'text' => $data['lang']['payment_pending'] ?? 'Payment Processing', 
+                        'label' => $data['lang']['status_pending'] ?? 'Pending',
                         'class' => 'status-pending', 
                         'textColor' => '#d97706',
-                        'desc' => $data['lang']['change_status_pending']
+                        'desc' => $data['lang']['change_status_pending'] ?? ''
                     ],
                     'refunded'  => [
-                        'text' => $data['lang']['payment_refunded'], 
+                        'text' => $data['lang']['payment_refunded'] ?? 'Payment Refunded', 
+                        'label' => $data['lang']['status_refunded'] ?? ($data['lang']['badge_refunded'] ?? 'Refunded'),
                         'class' => 'status-refunded', 
                         'textColor' => '#0284c7',
-                        'desc' => $data['lang']['change_status_refunded']
+                        'desc' => $data['lang']['change_status_refunded'] ?? ''
                     ],
                     'canceled'  => [
-                        'text' => $data['lang']['payment_canceled'], 
+                        'text' => $data['lang']['payment_canceled'] ?? 'Payment Canceled', 
+                        'label' => $data['lang']['status_canceled'] ?? ($data['lang']['badge_canceled'] ?? 'Canceled'),
                         'class' => 'status-canceled', 
                         'textColor' => '#dc2626',
-                        'desc' => $data['lang']['change_status_cancled']
+                        'desc' => $data['lang']['change_status_cancled'] ?? ''
                     ],
                 ];
 
-                $currentStatus = $statusMap[$status] ?? $statusMap['pending'];
+                $currentStatus = $statusMap[$status] ?? [
+                    'text' => ucfirst($status),
+                    'label' => $data['lang']['status_' . $status] ?? ucfirst($status),
+                    'class' => 'status-pending',
+                    'textColor' => '#4f46e5',
+                    'desc' => ''
+                ];
                 ?>
 
                 <div class="mp-status-icon-wrapper <?php echo $currentStatus['class']; ?>">
@@ -466,7 +476,7 @@
                             </tr>
                             <tr>
                                 <th><?php echo $data['lang']['status']?></th>
-                                <td><span style="color: <?php echo $currentStatus['textColor']; ?>; text-transform: capitalize;"><?php echo $status; ?></span></td>
+                                <td><span style="color: <?php echo $currentStatus['textColor']; ?>; font-weight: 700;"><?php echo $currentStatus['label']; ?></span></td>
                             </tr>
                         </tbody>
                     </table>
