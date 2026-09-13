@@ -74,7 +74,7 @@
                 </div>
             </div>
 
-            <div class="text-center text-secondary mt-3">Forget it, <a href="login">send me back</a> to the sign in screen.</div>
+            <div class="text-center text-secondary mt-3">Forget it, <a href="<?php echo $site_url.$path_login; ?>">send me back</a> to the sign in screen.</div>
         </div>
     </div>
 

@@ -138,7 +138,7 @@ if ($global_user_login == true) {
 
             $.ajax({
                 type: 'POST',
-                url: 'login',
+                url: '<?php echo $site_url.$path_login; ?>',
                 data: formData,
                 dataType: 'json',
                 success: function (response) {

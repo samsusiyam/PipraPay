@@ -122,6 +122,7 @@
     $path_invoice = 'invoice';
     $path_payment_link = 'payment-link';
     $path_admin = 'admin';
+    $path_login = 'login';
     $path_cron = 'cron';
     $path_homepageRedirect = '';
 
@@ -163,6 +164,7 @@
             $path_invoice = ($value = get_env('geneal-application-settings-invoicePath')) && $value !== '--' ? $value : 'invoice';
             $path_payment_link = ($value = get_env('geneal-application-settings-paymentLinkPath')) && $value !== '--' ? $value : 'payment-link';
             $path_admin = ($value = get_env('geneal-application-settings-adminPath')) && $value !== '--' ? $value : 'admin';
+            $path_login = ($value = get_env('geneal-application-settings-loginPath')) && $value !== '--' ? $value : 'login';
             $path_cron = ($value = get_env('geneal-application-settings-cronPath')) && $value !== '--' ? $value : 'cron';
             $path_homepageRedirect = ($value = get_env('geneal-application-settings-homepageRedirect')) && $value !== '--' ? $value : '';
 
@@ -249,7 +251,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
         logoutCookie();
 ?>
         <script>
-           location.href = '<?php echo $site_url.'login'?>';
+           location.href = '<?php echo $site_url.$path_login; ?>';
         </script>
 <?php
     }
@@ -4666,6 +4668,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     if (empty($adminPath)) {
                         $adminPath = 'admin';
                     }
+                    $loginPath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['loginPath'] ?? ''))));
+                    if (empty($loginPath)) {
+                        $loginPath = 'login';
+                    }
                     $invoicePath = strtolower(trim(preg_replace('/[^a-zA-Z0-9_-]/', '', escape_string($_POST['invoicePath'] ?? ''))));
                     if (empty($invoicePath)) {
                         $invoicePath = 'invoice';
@@ -4687,6 +4693,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                     set_env('geneal-application-settings-homepageRedirect', $homepageRedirect);
                     set_env('geneal-application-settings-adminPath', $adminPath);
+                    set_env('geneal-application-settings-loginPath', $loginPath);
                     set_env('geneal-application-settings-invoicePath', $invoicePath);
                     set_env('geneal-application-settings-paymentLinkPath', $paymentLinkPath);
                     set_env('geneal-application-settings-paymentPath', $paymentPath);
@@ -4694,7 +4701,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     set_env('geneal-application-settings-default_timezone', $default_timezone);
                     set_env('geneal-application-settings-webhook_attempts_limit', $webhook_attempts_limit);
 
-                    echo json_encode(['status' => 'true', 'title' => 'Settings Updated', 'message' => 'The application settings has been updated successfully.', 'new_admin_path' => $adminPath, 'csrf_token' => $new_csrf_token]);
+                    echo json_encode(['status' => 'true', 'title' => 'Settings Updated', 'message' => 'The application settings has been updated successfully.', 'new_admin_path' => $adminPath, 'new_login_path' => $loginPath, 'csrf_token' => $new_csrf_token]);
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                 }

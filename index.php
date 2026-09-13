@@ -131,7 +131,20 @@
                         }
                         break;
 
-                    case 'login':
+                    case $path_login:
+                        if(file_exists(__DIR__ . '/pp-content/pp-admin/login.php')){
+                            require __DIR__ . '/pp-content/pp-admin/login.php';
+                        }else{
+                            if(file_exists(__DIR__ . '/pp-404.php')){
+                                http_response_code(404);
+                                require __DIR__ . '/pp-404.php';
+                            }else{
+                                http_response_code(403);
+                                exit('Direct access not allowed');
+                            }
+                        }
+                        break;
+
                     case 'forgot':
                     case '2fa':
                         if(file_exists(__DIR__ . '/pp-content/pp-admin/'.$route.'.php')){
@@ -2063,7 +2076,7 @@
 
                     case 'homepageRedirect':
                         if($path_homepageRedirect == ""){
-                            echo '<script>location.href="login";</script>';
+                            echo '<script>location.href="'.$site_url.$path_login.'";</script>';
                         }else{
                             echo '<script>location.href="https://'.$path_homepageRedirect.'";</script>';
                         }

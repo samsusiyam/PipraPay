@@ -111,6 +111,19 @@ if (!defined('PipraPay_INIT')) {
                             </div>
 
                             <div class="col-lg-12">
+                                <label class="form-label">Login path</label>
+                                <div class="form-control-wrap mb-2">
+                                    <div class="input-group">
+                                        <span class="input-group-text"> <?php echo $site_url?> </span>
+                                        <input type="text" class="form-control" id="loginPath" placeholder="login" value="<?= get_env('geneal-application-settings-loginPath') ?: 'login'; ?>">
+                                    </div>
+                                </div>
+                                <small class="form-hint">
+                                    Lowercase letters, numbers, and dashes only. Example: login, signin, portal-login, auth
+                                </small>
+                            </div>
+
+                            <div class="col-lg-12">
                                 <label class="form-label">Invoice path</label>
                                 <div class="form-control-wrap mb-2">
                                     <div class="input-group">
@@ -179,6 +192,7 @@ if (!defined('PipraPay_INIT')) {
 
         var homepageRedirect = $('#homepageRedirect').val();
         var adminPath = $('#adminPath').val();
+        var loginPath = $('#loginPath').val();
         var invoicePath = $('#invoicePath').val();
         var paymentLinkPath = $('#paymentLinkPath').val();
         var paymentPath = $('#paymentPath').val();
@@ -195,7 +209,7 @@ if (!defined('PipraPay_INIT')) {
         $.ajax({
             type: 'POST',
             url: '<?php echo $site_url.$path_admin ?>/dashboard',
-            data: {action: "geneal-application-settings", csrf_token: csrf_token_default, default_timezone: default_timezone, webhook_attempts_limit: webhook_attempts_limit, homepageRedirect: homepageRedirect, adminPath: adminPath, invoicePath: invoicePath, paymentLinkPath: paymentLinkPath, paymentPath: paymentPath, cronPath: cronPath},
+            data: {action: "geneal-application-settings", csrf_token: csrf_token_default, default_timezone: default_timezone, webhook_attempts_limit: webhook_attempts_limit, homepageRedirect: homepageRedirect, adminPath: adminPath, loginPath: loginPath, invoicePath: invoicePath, paymentLinkPath: paymentLinkPath, paymentPath: paymentPath, cronPath: cronPath},
             dataType: 'json',
             success: function (response) {
                 closeAllBootstrapModals();
