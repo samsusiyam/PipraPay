@@ -253,6 +253,45 @@
             box-shadow: 0 12px 20px -4px rgba(22, 163, 74, 0.45);
         }
 
+        .btn-redirect-now {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 16px;
+            background: var(--mp-primary);
+            color: #ffffff !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+        .btn-redirect-now:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-site-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            background: #f1f5f9;
+            color: #334155;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+        }
+        .btn-site-link:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
         /* Modern Language Selector Modal */
         .mp-lang-modal .modal-content {
             border-radius: 24px;
@@ -481,98 +520,150 @@
                         </tbody>
                     </table>
 
+                    <?php endif; ?>
+
+                    <?php 
+                        $return_url = $data['transaction']['return_url'] ?? '';
+                        if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])):
+                    ?>
+                        <div class="mp-redirect-box mb-3">
+                            <div class="d-flex align-items-center justify-content-between gap-2 p-3" style="background: rgba(79, 70, 229, 0.06); border: 1px solid rgba(79, 70, 229, 0.15); border-radius: 14px;">
+                                <div class="d-flex align-items-center gap-2 text-start">
+                                    <div class="spinner-border spinner-border-sm" role="status" style="color: var(--mp-primary); width: 1.1rem; height: 1.1rem; border-width: 0.15em;"></div>
+                                    <span style="font-size: 0.88rem; font-weight: 500; color: #334155;">
+                                        <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <strong id="redirect-countdown" style="color: var(--mp-primary); font-size: 1.05rem;">3</strong><?php echo $data['lang']['seconds'] ?? 's'; ?>...
+                                    </span>
+                                </div>
+                                <a href="<?php echo htmlspecialchars($return_url); ?>" class="btn-redirect-now">
+                                    <?php echo $data['lang']['redirect_now'] ?? 'Redirect Now'; ?> &rarr;
+                                </a>
+                            </div>
+                            <div class="progress mt-2" style="height: 4px; border-radius: 4px; background: rgba(79, 70, 229, 0.1);">
+                                <div id="redirect-progress-bar" class="progress-bar" role="progressbar" style="width: 100%; background: var(--mp-primary); transition: width 1s linear;"></div>
+                            </div>
+                        </div>
+                    <?php elseif (!empty($return_url) && $return_url !== '--'): ?>
+                        <div class="mb-3">
+                            <a href="<?php echo htmlspecialchars($return_url); ?>" class="btn-site-link">
+                                <?php echo $data['lang']['go_to_site'] ?? 'Go to Website'; ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if ($status === 'completed'): ?>
                         <a href="<?php echo pp_checkout_address();?>?receipt" class="btn-receipt">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
                             <?php echo $data['lang']['download_receipt']?>
                         </a>
                     <?php endif; ?>
-                <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Footer Watermark Branding -->
+            <div class="mp-footer-branding">
+                <?php echo htmlspecialchars($data['options']['watermark_text'] ?? 'Secured by PipraPay'); ?>
             </div>
         </div>
 
-        <!-- Footer Watermark Branding -->
-        <div class="mp-footer-branding">
-            <?php echo htmlspecialchars($data['options']['watermark_text'] ?? 'Secured by PipraPay'); ?>
-        </div>
-    </div>
-
-    <!-- Language Selector Modal -->
-    <div class="modal fade mp-lang-modal" id="modal-language" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0 pb-2 pt-4 px-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="mp-lang-icon-wrap">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M3.6 9h16.8" /><path d="M3.6 15h16.8" /><path d="M11.5 3a17 17 0 0 0 0 18" /><path d="M12.5 3a17 17 0 0 1 0 18" /></svg>
+        <!-- Language Selector Modal -->
+        <div class="modal fade mp-lang-modal" id="modal-language" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0 pb-2 pt-4 px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="mp-lang-icon-wrap">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M3.6 9h16.8" /><path d="M3.6 15h16.8" /><path d="M11.5 3a17 17 0 0 0 0 18" /><path d="M12.5 3a17 17 0 0 1 0 18" /></svg>
+                            </div>
+                            <div>
+                                <h5 class="modal-title fw-bold mb-0 text-dark"><?php echo $data['lang']['select_language'] ?? 'Select Language'; ?></h5>
+                                <p class="text-muted small mb-0 mt-1"><?php echo $data['lang']['select_a_language'] ?? 'Choose your preferred language'; ?></p>
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="modal-title fw-bold mb-0 text-dark"><?php echo $data['lang']['select_language'] ?? 'Select Language'; ?></h5>
-                            <p class="text-muted small mb-0 mt-1"><?php echo $data['lang']['select_a_language'] ?? 'Choose your preferred language'; ?></p>
-                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4 pt-2">
-                    <div class="mp-lang-grid">
-                        <?php
-                        $currentLang = $_SESSION['ui_language'] ?? ($data['brand']['locale']['language'] ?? 'en');
-                        $languagesMeta = [
-                            'en' => ['name' => 'English', 'native' => 'English', 'flag' => '🇺🇸', 'code' => 'EN', 'sub' => 'Default'],
-                            'bn' => ['name' => 'Bangla', 'native' => 'বাংলা', 'flag' => '🇧🇩', 'code' => 'BN', 'sub' => 'Bengali'],
-                            'hi' => ['name' => 'Hindi', 'native' => 'हिन्दी', 'flag' => '🇮🇳', 'code' => 'HI', 'sub' => 'Hindi'],
-                            'ur' => ['name' => 'Urdu', 'native' => 'اردو', 'flag' => '🇵🇰', 'code' => 'UR', 'sub' => 'Urdu'],
-                            'ar' => ['name' => 'Arabic', 'native' => 'العربية', 'flag' => '🇸🇦', 'code' => 'AR', 'sub' => 'Arabic'],
-                        ];
-                        $supportedLanguages = !empty($data['supported_languages']) ? $data['supported_languages'] : [
-                            'en' => 'English',
-                            'bn' => 'বাংলা',
-                            'hi' => 'हिन्दी',
-                            'ur' => 'اردو',
-                            'ar' => 'العربية',
-                        ];
-                        foreach ($supportedLanguages as $code => $label):
-                            $meta = $languagesMeta[$code] ?? ['name' => $label, 'native' => $label, 'flag' => '🌐', 'code' => strtoupper($code), 'sub' => $label];
-                            $isActive = ($currentLang === $code);
-                        ?>
-                            <div class="mp-lang-card <?= $isActive ? 'active' : '' ?>" onclick="selectModernLanguage('<?= htmlspecialchars($code) ?>')">
-                                <div class="mp-lang-card-left">
-                                    <span class="mp-lang-flag"><?= $meta['flag'] ?></span>
-                                    <div class="mp-lang-info">
-                                        <div class="mp-lang-native"><?= htmlspecialchars($meta['native']) ?></div>
-                                        <div class="mp-lang-english"><?= htmlspecialchars($meta['sub']) ?></div>
+                    <div class="modal-body p-4 pt-2">
+                        <div class="mp-lang-grid">
+                            <?php
+                            $currentLang = $_SESSION['ui_language'] ?? ($data['brand']['locale']['language'] ?? 'en');
+                            $languagesMeta = [
+                                'en' => ['name' => 'English', 'native' => 'English', 'flag' => '🇺🇸', 'code' => 'EN', 'sub' => 'Default'],
+                                'bn' => ['name' => 'Bangla', 'native' => 'বাংলা', 'flag' => '🇧🇩', 'code' => 'BN', 'sub' => 'Bengali'],
+                                'hi' => ['name' => 'Hindi', 'native' => 'हिन्दी', 'flag' => '🇮🇳', 'code' => 'HI', 'sub' => 'Hindi'],
+                                'ur' => ['name' => 'Urdu', 'native' => 'اردو', 'flag' => '🇵🇰', 'code' => 'UR', 'sub' => 'Urdu'],
+                                'ar' => ['name' => 'Arabic', 'native' => 'العربية', 'flag' => '🇸🇦', 'code' => 'AR', 'sub' => 'Arabic'],
+                            ];
+                            $supportedLanguages = !empty($data['supported_languages']) ? $data['supported_languages'] : [
+                                'en' => 'English',
+                                'bn' => 'বাংলা',
+                                'hi' => 'हिन्दी',
+                                'ur' => 'اردو',
+                                'ar' => 'العربية',
+                            ];
+                            foreach ($supportedLanguages as $code => $label):
+                                $meta = $languagesMeta[$code] ?? ['name' => $label, 'native' => $label, 'flag' => '🌐', 'code' => strtoupper($code), 'sub' => $label];
+                                $isActive = ($currentLang === $code);
+                            ?>
+                                <div class="mp-lang-card <?= $isActive ? 'active' : '' ?>" onclick="selectModernLanguage('<?= htmlspecialchars($code) ?>')">
+                                    <div class="mp-lang-card-left">
+                                        <span class="mp-lang-flag"><?= $meta['flag'] ?></span>
+                                        <div class="mp-lang-info">
+                                            <div class="mp-lang-native"><?= htmlspecialchars($meta['native']) ?></div>
+                                            <div class="mp-lang-english"><?= htmlspecialchars($meta['sub']) ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="mp-lang-check">
+                                        <?php if ($isActive): ?>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
+                                        <?php else: ?>
+                                            <div class="mp-lang-radio-circle"></div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="mp-lang-check">
-                                    <?php if ($isActive): ?>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
-                                    <?php else: ?>
-                                        <div class="mp-lang-radio-circle"></div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <?php echo pp_assets('footer'); ?>
+        <?php echo pp_assets('footer'); ?>
 
-    <script data-cfasync="false">
-        function selectModernLanguage(code) {
-            if (code) {
-                location.href = '?lang=' + code;
+        <script data-cfasync="false">
+            function selectModernLanguage(code) {
+                if (code) {
+                    location.href = '?lang=' + code;
+                }
             }
-        }
 
-        function hitLanguage(){
-            var language = document.querySelector("#model-languages")?.value;
-            if (language) {
-                location.href = '?lang=' + language;
+            function hitLanguage(){
+                var language = document.querySelector("#model-languages")?.value;
+                if (language) {
+                    location.href = '?lang=' + language;
+                }
             }
-        }
-    </script>
-</body>
-</html>
+
+            <?php if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])): ?>
+                (function() {
+                    var secondsLeft = 3;
+                    var countdownEl = document.getElementById('redirect-countdown');
+                    var progressBar = document.getElementById('redirect-progress-bar');
+                    var targetUrl = <?php echo json_encode($return_url); ?>;
+
+                    var countdownInterval = setInterval(function() {
+                        secondsLeft--;
+                        if (countdownEl) {
+                            countdownEl.textContent = secondsLeft;
+                        }
+                        if (progressBar) {
+                            progressBar.style.width = ((secondsLeft / 3) * 100) + '%';
+                        }
+                        if (secondsLeft <= 0) {
+                            clearInterval(countdownInterval);
+                            window.location.href = targetUrl;
+                        }
+                    }, 1000);
+                })();
+            <?php endif; ?>
+        </script>
+    </body>
+    </html>

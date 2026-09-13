@@ -223,8 +223,27 @@
                     </table>
                 </div>
 
-                <div class="mb-3">
-                    <a href="<?php echo $data['transaction']['return_url']?>" class="btn btn-primary <?php echo ($data['transaction']['return_url'] == "--" || $data['transaction']['return_url'] == "") ? 'd-none' : ''?>"><?php echo $data['lang']['go_to_site']?></a>
+                <?php 
+                    $return_url = $data['transaction']['return_url'] ?? '';
+                    if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])):
+                ?>
+                    <div class="mb-3 text-center p-3 rounded" style="background: rgba(95, 56, 249, 0.08); border: 1px dashed rgba(95, 56, 249, 0.3);">
+                        <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 1rem; height: 1rem;"></div>
+                            <span class="fw-semibold text-dark">
+                                <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <span id="redirect-countdown" class="badge bg-primary fs-6 px-2 py-1">3</span><?php echo $data['lang']['seconds'] ?? 's'; ?>...
+                            </span>
+                        </div>
+                        <div class="progress mb-2" style="height: 4px; background: rgba(95, 56, 249, 0.15);">
+                            <div id="redirect-progress-bar" class="progress-bar bg-primary" role="progressbar" style="width: 100%; transition: width 1s linear;"></div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <div class="mb-3 d-flex flex-wrap gap-2 justify-content-center">
+                    <?php if (!empty($return_url) && $return_url !== '--'): ?>
+                        <a href="<?php echo htmlspecialchars($return_url); ?>" class="btn btn-primary"><?php echo in_array($status, ['completed', 'canceled']) ? ($data['lang']['redirect_now'] ?? 'Redirect Now') : ($data['lang']['go_to_site'] ?? 'Go to Site'); ?></a>
+                    <?php endif; ?>
                     <?php
                         if($status == "completed"){
                     ?>
@@ -278,6 +297,29 @@
                 location.href = '?lang=' + language;
             }
         }
+
+        <?php if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])): ?>
+            (function() {
+                var secondsLeft = 3;
+                var countdownEl = document.getElementById('redirect-countdown');
+                var progressBar = document.getElementById('redirect-progress-bar');
+                var targetUrl = <?php echo json_encode($return_url); ?>;
+
+                var countdownInterval = setInterval(function() {
+                    secondsLeft--;
+                    if (countdownEl) {
+                        countdownEl.textContent = secondsLeft;
+                    }
+                    if (progressBar) {
+                        progressBar.style.width = ((secondsLeft / 3) * 100) + '%';
+                    }
+                    if (secondsLeft <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = targetUrl;
+                    }
+                }, 1000);
+            })();
+        <?php endif; ?>
     </script>
 </body>
 </html>
