@@ -1,0 +1,6 @@
+﻿hostnibo_pay.sql
+*.sql
+pp-bank-debug.log
+.env
+.DS_Store
+Thumbs.db

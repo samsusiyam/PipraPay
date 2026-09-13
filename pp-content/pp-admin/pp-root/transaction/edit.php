@@ -22,13 +22,19 @@ if (!defined('PipraPay_INIT')) {
         http_response_code(403);
         exit('Invalid transaction id');
     }else{
-        $ref = escape_string($ref);
-
-        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = "'.$ref.'" AND brand_id = "'.$global_response_brand['response'][0]['brand_id'].'" AND status NOT IN ("initiated")'),true);
+        $params_tx = [
+            ':ref' => $ref,
+            ':brand_id' => $global_response_brand['response'][0]['brand_id']
+        ];
+        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND brand_id = :brand_id AND status NOT IN ("initiated")', '* FROM', $params_tx), true);
         if($response_transaction['status'] == true){
-            $response_gateway = json_decode(getData($db_prefix.'gateways',' WHERE brand_id ="'.$global_response_brand['response'][0]['brand_id'].'" AND gateway_id = "'.$response_transaction['response'][0]['gateway_id'].'"'),true);
+            $params_gw = [
+                ':brand_id' => $global_response_brand['response'][0]['brand_id'],
+                ':gateway_id' => $response_transaction['response'][0]['gateway_id']
+            ];
+            $response_gateway = json_decode(getData($db_prefix.'gateways',' WHERE brand_id = :brand_id AND gateway_id = :gateway_id', '* FROM', $params_gw), true);
 
-            $gateway_name = $response_gateway['response'][0]['name'] ?? 'Unknow';
+            $gateway_name = $response_gateway['response'][0]['name'] ?? 'Unknown';
 
             $customer_info = json_decode($response_transaction['response'][0]['customer_info'], true) ?: [];
         }else{

@@ -22,9 +22,8 @@
         http_response_code(403);
         exit('Invalid slug');
     }else{
-        $ref = escape_string($ref);
-
-        $response_addon = json_decode(getData($db_prefix.'addon','WHERE addon_id = "'.$ref.'"'),true);
+        $params_addon = [':addon_id' => $ref];
+        $response_addon = json_decode(getData($db_prefix.'addon','WHERE addon_id = :addon_id', '* FROM', $params_addon), true);
         if($response_addon['status'] == false){
             http_response_code(403);
             exit('Invalid slug');

@@ -22,10 +22,9 @@
         http_response_code(403);
         exit('Invalid item id');
     } else {
-        $d_id = escape_string($d_id);
-
-        $response_staff = json_decode(getData($db_prefix . 'device', 'WHERE device_id = "' . $d_id . '"'), true);
-        if ($response_staff['status'] == true) {
+        $params_dev = [':device_id' => $d_id];
+        $response_device = json_decode(getData($db_prefix . 'device', 'WHERE device_id = :device_id', '* FROM', $params_dev), true);
+        if ($response_device['status'] == true) {
 
         } else {
             http_response_code(403);

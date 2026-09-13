@@ -105,6 +105,9 @@
 
             if($token_grand_bk !== ""){
                 $_SESSION['bk-token'] = $token_grand_bk;
+                if(!empty($data['transaction']['ref'])){
+                    $_SESSION['bk-token-'.$data['transaction']['ref']] = $token_grand_bk;
+                }
             }
 
             $requestbody = array(
@@ -151,7 +154,31 @@
 
             if($status == "success"){
                 $paymentID = $_GET['paymentID'] ?? '';
-                $auth = $_SESSION['bk-token'] ?? '';
+                $txnRef = $data['transaction']['ref'] ?? '';
+                $auth = $_SESSION['bk-token-'.$txnRef] ?? ($_SESSION['bk-token'] ?? '');
+
+                if(empty($auth)){
+                    $grant_req = array(
+                        'app_key'=> ($data['options']['app_key'] ?? ''),
+                        'app_secret'=> ($data['options']['app_secret_key'] ?? '')
+                    );
+                    $url_grant = curl_init($base_url.'/checkout/token/grant');
+                    curl_setopt_array($url_grant, [
+                        CURLOPT_HTTPHEADER => [
+                            'Content-Type:application/json',
+                            'username:'.($data['options']['username'] ?? ''),
+                            'password:'.($data['options']['password'] ?? '')
+                        ],
+                        CURLOPT_CUSTOMREQUEST => "POST",
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_POSTFIELDS => json_encode($grant_req),
+                        CURLOPT_FOLLOWLOCATION => 1,
+                        CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4
+                    ]);
+                    $token_res = json_decode(curl_exec($url_grant), true);
+                    curl_close($url_grant);
+                    $auth = $token_res['id_token'] ?? '';
+                }
 
                 $post_token = array('paymentID' => $paymentID);
 

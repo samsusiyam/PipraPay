@@ -65,14 +65,18 @@
     function getAuthorizationHeader() {
         if (function_exists('getallheaders')) {
             $headers = getallheaders();
-            if (isset($headers['MHS-PIPRAPAY-API-KEY'])) {
-                return trim($headers['MHS-PIPRAPAY-API-KEY']);
+            if (is_array($headers)) {
+                foreach ($headers as $key => $val) {
+                    if (strcasecmp($key, 'MHS-PIPRAPAY-API-KEY') === 0) {
+                        return trim((string)$val);
+                    }
+                }
             }
         }
     
         foreach ($_SERVER as $key => $value) {
-            if (stripos($key, 'HTTP_MHS_PIPRAPAY_API_KEY') !== false) {
-                return trim($value);
+            if (strcasecmp($key, 'HTTP_MHS_PIPRAPAY_API_KEY') === 0) {
+                return trim((string)$value);
             }
         }
     
@@ -144,7 +148,11 @@
 
     function getUserDeviceInfo() {
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+        $ipAddress = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+        if (strpos($ipAddress, ',') !== false) {
+            $ipParts = explode(',', $ipAddress);
+            $ipAddress = trim($ipParts[0]);
+        }
     
         if (preg_match('/mobile/i', $userAgent)) {
             $deviceType = "Mobile";
@@ -196,7 +204,7 @@
     function setsCookie($cookieName, $cookieValue, $days = 365) {
         $expiryTime = time() + ($days * 24 * 60 * 60);
     
-        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $_SERVER['SERVER_PORT'] == 443;
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
     
         setcookie($cookieName, $cookieValue, [
             'expires' => $expiryTime,
@@ -214,12 +222,14 @@
     
     // Logout: clear all cookies and destroy session
     function logoutCookie() {
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
         // Expire all cookies
         foreach ($_COOKIE as $name => $value) {
             setcookie($name, '', [
                 'expires' => time() - 3600,
                 'path' => '/',
-                'secure' => true,
+                'secure' => $isSecure,
                 'httponly' => true,
                 'samesite' => 'Lax'
             ]);
@@ -234,10 +244,19 @@
     }
 
     function escape_string($value) {
-        /*$conn = connectDatabase();
-        $value = mysqli_real_escape_string($conn, $value);*/
-
-        return $value;
+        if (!is_string($value)) {
+            return $value;
+        }
+        try {
+            $pdo = connectDatabase();
+            $quoted = $pdo->quote($value);
+            if ($quoted !== false && strlen($quoted) >= 2) {
+                return substr($quoted, 1, -1);
+            }
+        } catch (Exception $e) {
+            // fallback
+        }
+        return addslashes($value);
     }   
 
     function getData($tableName, $coloum_name, $type = "* FROM", $params = []) {
@@ -488,10 +507,15 @@
 
     function money_round($amount, int $decimals = 2): string {
         $amount = money_sanitize($amount);
-        $factor = bcpow('10', (string)($decimals + 1));
-        $tmp = bcmul($amount, $factor, 0);
-        $tmp = bcdiv($tmp, '10', 0); 
-        return bcdiv($tmp, bcpow('10', (string)$decimals), $decimals);
+        if ($amount === '' || $amount === '0') {
+            return number_format(0, $decimals, '.', '');
+        }
+        $isNegative = str_starts_with($amount, '-');
+        $unsigned = ltrim($amount, '-');
+        $add = '0.' . str_repeat('0', $decimals) . '5';
+        $res = bcadd($unsigned, $add, $decimals + 1);
+        $rounded = bcdiv($res, '1', $decimals);
+        return ($isNegative && bccomp($rounded, '0', $decimals) !== 0 ? '-' : '') . $rounded;
     }
 
     function pp_get_gateway_options($gateway_id = '', $brand_id = ''){
@@ -2012,15 +2036,13 @@
     }
 
     function pp_checkout_address($paymentid = ''){
-        global $path_payment, $paymentID124123412;
+        global $path_payment, $paymentID;
 
-        if($paymentid !== ""){
-            $paymentID124123412 = $paymentid ?? '';
-        }else{
-           $paymentID124123412 = $paymentID124123412 ?? '';
+        if ($paymentid === '' || $paymentid === null) {
+            $paymentid = $paymentID ?? '';
         }
 
-        return pp_site_address().$path_payment.'/'.$paymentID124123412;
+        return pp_site_address().$path_payment.'/'.$paymentid;
     }
 
     function pp_hexToRgba($hex, $opacity = 1) {

@@ -22,9 +22,11 @@ if (!defined('PipraPay_INIT')) {
         http_response_code(403);
         exit('Invalid payment link id');
     }else{
-        $ref = escape_string($ref);
-
-        $response_paymentLink = json_decode(getData($db_prefix.'payment_link','WHERE ref = "'.$ref.'" AND brand_id = "'.$global_response_brand['response'][0]['brand_id'].'"'),true);
+        $params_pl = [
+            ':ref' => $ref,
+            ':brand_id' => $global_response_brand['response'][0]['brand_id']
+        ];
+        $response_paymentLink = json_decode(getData($db_prefix.'payment_link','WHERE ref = :ref AND brand_id = :brand_id', '* FROM', $params_pl), true);
         if($response_paymentLink['status'] == true){
             $response_product_info = json_decode($response_paymentLink['response'][0]['product_info'], true);
         }else{

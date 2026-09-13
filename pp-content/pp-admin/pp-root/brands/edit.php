@@ -22,9 +22,8 @@
         http_response_code(403);
         exit('Invalid brand id');
     }else{
-        $b_id = escape_string($b_id);
-
-        $response_brands = json_decode(getData($db_prefix.'brands','WHERE brand_id = "'.$b_id.'"'),true);
+        $params_brand = [':brand_id' => $b_id];
+        $response_brands = json_decode(getData($db_prefix.'brands','WHERE brand_id = :brand_id', '* FROM', $params_brand), true);
         if($response_brands['status'] == true){
             if($response_brands['response'][0]['id'] == 1){
                 http_response_code(403);

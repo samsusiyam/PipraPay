@@ -96,7 +96,7 @@
                 'customer_phone' => $data['transaction']['customer']['mobile'],
                 'customer_city' => 'Dhaka',
                 // Additional fields
-                'client_ip' => '102.101.1.1',
+                'client_ip' => (getUserDeviceInfo()['ip_address'] !== 'Unknown' ? getUserDeviceInfo()['ip_address'] : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')),
                 'discount_amount' => '0',
                 'disc_percent' => '0',
                 'customer_email' => $data['transaction']['customer']['email'],
@@ -217,7 +217,7 @@
                         pp_set_transaction_status($after_bp, 'canceled', $data['gateway']['gateway_id'], '', []);
                     }
 
-                    echo "<script>location.href='".pp_checkout_address()."';</script>";
+                    echo "<script>location.href='".pp_checkout_address($after_bp)."';</script>";
                 }
             }
         }

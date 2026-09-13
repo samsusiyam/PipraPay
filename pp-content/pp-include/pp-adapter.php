@@ -549,16 +549,20 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                         $target = $path_admin."/dashboard";
                                     }
 
+                                    $new_hashed_password = password_hash($password, PASSWORD_BCRYPT);
+                                    $columns = ['password', 'temp_password', 'reset_limit', 'updated_date'];
+                                    $values = [$new_hashed_password, '--', 3, getCurrentDatetime('Y-m-d H:i:s')];
+
                                     if($response['response'][0]['2fa_secret'] == '--' || $response['response'][0]['2fa_secret'] == ''){
                                         $ga = new PHPGangsta_GoogleAuthenticator();
                                         $secret = $ga->createSecret();
 
-                                        $columns = ['2fa_secret'];
-                                        $values = [$secret];
-                                        $condition = "id = '".$response['response'][0]['id']."'"; 
-                                        
-                                        updateData($db_prefix.'admin', $columns, $values, $condition);
+                                        $columns[] = '2fa_secret';
+                                        $values[] = $secret;
                                     }
+                                    $condition = "id = '".$response['response'][0]['id']."'"; 
+                                    
+                                    updateData($db_prefix.'admin', $columns, $values, $condition);
                                     
                                     $columns = ['a_id', 'cookie', 'browser', 'device', 'ip', 'created_date', 'updated_date'];
                                     $values = [$response['response'][0]['a_id'], $cookie, $userInfo['browser'], $userInfo['device'], $userInfo['ip_address'], getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];

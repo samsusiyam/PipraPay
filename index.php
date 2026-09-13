@@ -801,14 +801,14 @@
                                     echo json_encode([
                                         'error' => [
                                             'code' => 'INVALID_PP_ID',
-                                            'message' => 'A valid bp id is required.'
+                                            'message' => 'A valid payment ID is required.'
                                         ]
                                     ]);
                                     exit;
                                 }else{
-                                    $params = [ ':ref' => $pp_id ];
+                                    $params = [ ':ref' => $pp_id, ':brand_id' => $response_api['response'][0]['brand_id'] ];
 
-                                    $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref', '* FROM', $params),true);
+                                    $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND brand_id = :brand_id', '* FROM', $params),true);
                                     if($response_transaction['status'] == true){
                                             $metadata = json_decode($response_transaction['response'][0]['metadata'], true) ?: [];
 
@@ -850,7 +850,7 @@
                                         echo json_encode([
                                             'error' => [
                                                 'code' => 'INVALID_PP_ID',
-                                                'message' => 'A valid bp id is required.'
+                                                'message' => 'A valid payment ID is required.'
                                             ]
                                         ]);
                                         exit;
@@ -883,14 +883,14 @@
                                         echo json_encode([
                                             'error' => [
                                                 'code' => 'INVALID_PP_ID',
-                                                'message' => 'A valid bp id is required.'
+                                                'message' => 'A valid payment ID is required.'
                                             ]
                                         ]);
                                         exit;
                                     }else{
-                                        $params = [ ':ref' => $pp_id ];
+                                        $params = [ ':ref' => $pp_id, ':brand_id' => $response_api['response'][0]['brand_id'] ];
 
-                                        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref', '* FROM', $params),true);
+                                        $response_transaction = json_decode(getData($db_prefix.'transaction','WHERE ref = :ref AND brand_id = :brand_id', '* FROM', $params),true);
                                         if($response_transaction['status'] == true){
                                             if (($response_transaction['response'][0]['status'] ?? '') !== 'completed') {
                                                 http_response_code(400);
@@ -1030,7 +1030,6 @@
 
                     case $path_payment:
                         $paymentID = $param1;
-                        $paymentID124123412 = $param1;
 
                         $params = [ ':ref' => $paymentID ];
 
@@ -1418,7 +1417,9 @@
                                             'phone'   => $brandRow['support_phone_number'],
                                             'website' => $brandRow['support_website'],
                                             'whatsapp'=> $brandRow['whatsapp_number'],
-                                            'telegram'=> $brandRow['telegram'],
+                                            'telegram'=> 'https://t.me/'.$brandRow['telegram'],
+                                            'messenger'=> 'https://m.me/'.$brandRow['facebook_messenger'],
+                                            'fb_page'=> 'https://facebook.com/'.$brandRow['facebook_page'],
                                         ],
 
                                         'address' => [
@@ -1528,7 +1529,9 @@
                                             'phone'   => $brandRow['support_phone_number'],
                                             'website' => $brandRow['support_website'],
                                             'whatsapp'=> $brandRow['whatsapp_number'],
-                                            'telegram'=> $brandRow['telegram'],
+                                            'telegram'=> 'https://t.me/'.$brandRow['telegram'],
+                                            'messenger'=> 'https://m.me/'.$brandRow['facebook_messenger'],
+                                            'fb_page'=> 'https://facebook.com/'.$brandRow['facebook_page'],
                                         ],
 
                                         'address' => [
@@ -1678,7 +1681,9 @@
                                                 'phone'   => $brandRow['support_phone_number'],
                                                 'website' => $brandRow['support_website'],
                                                 'whatsapp'=> $brandRow['whatsapp_number'],
-                                                'telegram'=> $brandRow['telegram'],
+                                                'telegram'=> 'https://t.me/'.$brandRow['telegram'],
+                                                'messenger'=> 'https://m.me/'.$brandRow['facebook_messenger'],
+                                                'fb_page'=> 'https://facebook.com/'.$brandRow['facebook_page'],
                                             ],
 
                                             'address' => [
@@ -1853,6 +1858,7 @@
                                                     $condition = 'id ="'.$row['id'].'"'; 
 
                                                     updateData($db_prefix.'transaction', $columns, $values, $condition);
+                                                    $row['status'] = 'completed';
 
 
                                                     $metadata = json_decode($row['metadata'], true) ?: [];
@@ -1881,7 +1887,7 @@
                                                         "metadata" => $metadata, // ← AS-IS
                                                         "sender" => $response_pending_SMSTransaction['response'][0]['number'],
                                                         "transaction_id" => $row['trx_id'],
-                                                        "status" => $row['status'],
+                                                        "status" => 'completed',
                                                         "date" => convertUTCtoUserTZ($row['created_date'], ($response_brand['response'][0]['timezone'] === '--' || $response_brand['response'][0]['timezone'] === '') ? 'Asia/Dhaka' : $response_brand['response'][0]['timezone'], "M d, Y h:i A")
                                                     ];
 
@@ -1904,7 +1910,7 @@
                                                             "metadata" => $metadata, // ← AS-IS
                                                             "sender" => $response_pending_SMSTransaction['response'][0]['number'],
                                                             "transaction_id" => $row['trx_id'],
-                                                            "status" => $row['status'],
+                                                            "status" => 'completed',
                                                             "date" => convertUTCtoUserTZ($row['created_date'], ($response_brand['response'][0]['timezone'] === '--' || $response_brand['response'][0]['timezone'] === '') ? 'Asia/Dhaka' : $response_brand['response'][0]['timezone'], "M d, Y h:i A")
                                                         ];
 

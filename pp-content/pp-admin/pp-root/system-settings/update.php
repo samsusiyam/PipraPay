@@ -96,7 +96,7 @@ if (!defined('PipraPay_INIT')) {
                                         Last checked: 
                                         <?php
                                             if(get_env('last-auto-update-check') == "--" || get_env('last-auto-update-check') == ""){
-                                                echo 'Unknow';
+                                                echo 'Unknown';
                                             }else{
                                                 echo convertUTCtoUserTZ(get_env('last-auto-update-check'), ($global_response_brand['response'][0]['timezone'] === '--' || $global_response_brand['response'][0]['timezone'] === '') ? 'Asia/Dhaka' : $global_response_brand['response'][0]['timezone'], "M d, Y h:i A");
                                             }
@@ -116,7 +116,7 @@ if (!defined('PipraPay_INIT')) {
                         <div class="fw-semibold">
                             <?php
                                 if(get_env('last-auto-update-check') == "--" || get_env('last-auto-update-check') == ""){
-                                    echo 'Unknow';
+                                    echo 'Unknown';
                                 }else{
                                     $lastCheck = get_env('last-auto-update-check'); // e.g. 2026-01-19 12:10:36
 
