@@ -531,7 +531,7 @@
                                 <div class="d-flex align-items-center gap-2 text-start">
                                     <div class="spinner-border spinner-border-sm" role="status" style="color: var(--mp-primary); width: 1.1rem; height: 1.1rem; border-width: 0.15em;"></div>
                                     <span style="font-size: 0.88rem; font-weight: 500; color: #334155;">
-                                        <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <strong id="redirect-countdown" style="color: var(--mp-primary); font-size: 1.05rem;">3</strong><?php echo $data['lang']['seconds'] ?? 's'; ?>...
+                                        <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <strong id="redirect-countdown" style="color: var(--mp-primary); font-size: 1.05rem;">5</strong><?php echo $data['lang']['seconds'] ?? 's'; ?>...
                                     </span>
                                 </div>
                                 <a href="<?php echo htmlspecialchars($return_url); ?>" class="btn-redirect-now">
@@ -644,7 +644,8 @@
 
             <?php if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])): ?>
                 (function() {
-                    var secondsLeft = 3;
+                    var secondsLeft = 5;
+                    var totalSeconds = 5;
                     var countdownEl = document.getElementById('redirect-countdown');
                     var progressBar = document.getElementById('redirect-progress-bar');
                     var targetUrl = <?php echo json_encode($return_url); ?>;
@@ -655,7 +656,7 @@
                             countdownEl.textContent = secondsLeft;
                         }
                         if (progressBar) {
-                            progressBar.style.width = ((secondsLeft / 3) * 100) + '%';
+                            progressBar.style.width = ((secondsLeft / totalSeconds) * 100) + '%';
                         }
                         if (secondsLeft <= 0) {
                             clearInterval(countdownInterval);

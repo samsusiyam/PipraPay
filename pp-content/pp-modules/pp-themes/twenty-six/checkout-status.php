@@ -231,7 +231,7 @@
                         <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
                             <div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 1rem; height: 1rem;"></div>
                             <span class="fw-semibold text-dark">
-                                <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <span id="redirect-countdown" class="badge bg-primary fs-6 px-2 py-1">3</span><?php echo $data['lang']['seconds'] ?? 's'; ?>...
+                                <?php echo $data['lang']['redirecting_in'] ?? 'Redirecting to website in'; ?> <span id="redirect-countdown" class="badge bg-primary fs-6 px-2 py-1">5</span><?php echo $data['lang']['seconds'] ?? 's'; ?>...
                             </span>
                         </div>
                         <div class="progress mb-2" style="height: 4px; background: rgba(95, 56, 249, 0.15);">
@@ -300,7 +300,8 @@
 
         <?php if (!empty($return_url) && $return_url !== '--' && in_array($status, ['completed', 'canceled'])): ?>
             (function() {
-                var secondsLeft = 3;
+                var secondsLeft = 5;
+                var totalSeconds = 5;
                 var countdownEl = document.getElementById('redirect-countdown');
                 var progressBar = document.getElementById('redirect-progress-bar');
                 var targetUrl = <?php echo json_encode($return_url); ?>;
@@ -311,7 +312,7 @@
                         countdownEl.textContent = secondsLeft;
                     }
                     if (progressBar) {
-                        progressBar.style.width = ((secondsLeft / 3) * 100) + '%';
+                        progressBar.style.width = ((secondsLeft / totalSeconds) * 100) + '%';
                     }
                     if (secondsLeft <= 0) {
                         clearInterval(countdownInterval);
