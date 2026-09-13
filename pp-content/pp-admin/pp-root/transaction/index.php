@@ -382,15 +382,15 @@
     function load_data_list(page = 1){
         currentPage = page;
 
-        var csrf_token_default = $('input[name="csrf_token_default"]').val();
-        var search_input = $('.search_input').val();
-        var show_limit = $('.show_limit').val();
+        var csrf_token_default = $('input[name="csrf_token_default"]').val() || $('input[name="csrf_token"]').val() || '';
+        var search_input = $('.search_input').val() || '';
+        var show_limit = $('.show_limit').val() || 8;
 
-        var tabType = document.querySelector('#statusTabs .nav-link.active')?.dataset.type;
+        var tabType = document.querySelector('#statusTabs .nav-link.active')?.dataset.type || 'all';
 
-        var filter_status = $('#filter-status').val();
-        var filter_start = $('#filter-created-from').val();
-        var filter_end = $('#filter-created-until').val();
+        var filter_status = $('#filter-status').val() || '';
+        var filter_start = $('#filter-created-from').val() || '';
+        var filter_end = $('#filter-created-until').val() || '';
 
         let html = '';
 
@@ -496,7 +496,7 @@
         });
     }
 
-    $(document).on('click', '.table-data-list-pagination button', function () {
+    $(document).off('click', '.table-data-list-pagination button').on('click', '.table-data-list-pagination button', function () {
         let page = $(this).data('page');
         load_data_list(page);
     });

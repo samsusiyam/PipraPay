@@ -6692,9 +6692,9 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     }
 
                     $search_input = escape_string($_POST['search_input'] ?? '');
-                    $show_limit = escape_string($_POST['show_limit'] ?? 5);
+                    $show_limit = escape_string($_POST['show_limit'] ?? 8);
 
-                    $tabType = escape_string($_POST['tabType'] ?? '');
+                    $tabType = escape_string($_POST['tabType'] ?? 'all');
 
                     /* Filters */
                     $filter_status = escape_string($_POST['filter_status'] ?? '');
@@ -6703,7 +6703,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                     $where = [];
 
-                    if ($tabType !== "all") {
+                    if (!empty($tabType) && $tabType !== "all") {
                         $where[] = "status = '{$tabType}'";
                     }
 
@@ -6715,7 +6715,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $where[] = "created_date <= '{$filter_end} 23:59:59'";
                     }
 
-                    if ($filter_status !== '') {
+                    if (!empty($filter_status) && $filter_status !== 'all') {
                         $where[] = "status = '{$filter_status}'";
                     }
 
@@ -6723,17 +6723,17 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     /* Filters */
 
                     $page = max(1, intval($_POST['page'] ?? 1));
-                    $show_limit = ($_POST['show_limit'] == '') ? 999999 : intval($_POST['show_limit']);
+                    $show_limit = ($_POST['show_limit'] == '' || $_POST['show_limit'] == 'all') ? 999999 : intval($_POST['show_limit']);
                     $offset = ($page - 1) * $show_limit;
 
                     $sql_query = '';
 
                     if ($search_input !== '') {
-                        $sql_query .= " AND ( ref LIKE '%$search_input%' OR customer_info LIKE '%$search_input%' OR trx_id LIKE '%$search_input%' OR gateway_slug LIKE '%$search_input%' OR sender LIKE '%$search_input%' OR amount LIKE '%$search_input%' )";
+                        $sql_query .= " AND ( ref LIKE '%$search_input%' OR customer_info LIKE '%$search_input%' OR trx_id LIKE '%$search_input%' OR amount LIKE '%$search_input%' )";
                     }
 
                     $sql_limit = '';
-                    if($show_limit == 'all'){
+                    if($show_limit == 999999){
 
                     }else{
                        $sql_limit = " LIMIT $offset, $show_limit";
