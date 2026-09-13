@@ -1564,6 +1564,79 @@
             }
         }
     }
+
+    function uploadSlipFile($file, $max_file_size = 10485760) {
+        if (!is_dir(__DIR__.'/../../pp-media/storage')) {
+            if (!mkdir(__DIR__.'/../../pp-media/storage', 0755, true)) {
+                return json_encode(['status' => false, 'message' => 'Failed to create storage folder!']);
+            }
+        }
+        $upload_directory = __DIR__ . '/../../pp-media/storage/';
+
+        if (!isset($file) || !is_array($file) || !isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+            return json_encode(['status' => false, 'message' => 'No file uploaded or upload failed.']);
+        }
+
+        if (($file['size'] ?? 0) > $max_file_size) {
+            return json_encode(['status' => false, 'message' => 'File size exceeds maximum allowed limit (10MB).']);
+        }
+
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
+        $file_info          = pathinfo($file['name'] ?? '');
+        $file_extension     = strtolower($file_info['extension'] ?? '');
+
+        if (!in_array($file_extension, $allowed_extensions)) {
+            return json_encode(['status' => false, 'message' => 'Only PDF, JPG, PNG, GIF, and WEBP files are allowed.']);
+        }
+
+        $random_filename = generateRandomFilename($file_extension);
+        $full_path       = $upload_directory . $random_filename;
+
+        // If PDF file, store directly without image processing
+        if ($file_extension === 'pdf') {
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                return json_encode(['status' => true, 'file' => $random_filename]);
+            } else {
+                return json_encode(['status' => false, 'message' => 'Failed to upload PDF file.']);
+            }
+        }
+
+        // Image processing with Imagick if available
+        try {
+            if (!extension_loaded('imagick')) {
+                throw new Exception('Imagick extension not installed.');
+            }
+
+            $img = new Imagick($file['tmp_name']);
+            $hasAlpha = $img->getImageAlphaChannel();
+
+            if ($hasAlpha && Imagick::queryFormats('WEBP')) {
+                $img->setImageFormat('webp');
+                $img->setOption('webp:lossless', 'true');
+                $img->setImageCompressionQuality(85);
+                $random_filename = generateRandomFilename('webp');
+            } elseif (!$hasAlpha && Imagick::queryFormats('JPEG')) {
+                $img->setImageFormat('jpeg');
+                $img->setImageCompression(Imagick::COMPRESSION_JPEG);
+                $img->setImageCompressionQuality(80);
+                $random_filename = generateRandomFilename('jpg');
+            }
+
+            $full_path = $upload_directory . $random_filename;
+            $img->stripImage();
+            $img->writeImage($full_path);
+            $img->clear();
+            $img->destroy();
+
+            return json_encode(['status' => true, 'file' => $random_filename]);
+        } catch (Exception $e) {
+            if (move_uploaded_file($file['tmp_name'], $full_path)) {
+                return json_encode(['status' => true, 'file' => $random_filename]);
+            } else {
+                return json_encode(['status' => false, 'message' => 'File upload failed.']);
+            }
+        }
+    }
     
     function deleteImage($file) {
         // Define the local image directory path
@@ -3360,7 +3433,7 @@
                                     <div class="form-group  mt-3">
                                         <label class="form-label">'.$data['lang']['upload_slip'].'</label>
                                         <div class="form-control-wrap">
-                                            <input type="file" class="form-control" name="slip" accept = "image/*" placeholder="'.$data['lang']['upload_slip'].'" required=""> 
+                                            <input type="file" class="form-control" name="slip" accept="image/*,application/pdf,.pdf" placeholder="'.$data['lang']['upload_slip'].'" required=""> 
                                         </div>
                                     </div>
 

@@ -9063,20 +9063,21 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                                 }
                                             }else{
                                                 if(isset($gateway_info['verify_by']) && $gateway_info['verify_by'] == "slip"){
-                                                    $slip = escape_string($_FILES['slip'] ?? '');
+                                                    $slip = $_FILES['slip'] ?? null;
 
-                                                    if($slip == ""){
-                                                        echo json_encode(['status' => "false", 'title' => 'Missing Transaction Slip', 'message' => 'The Transaction slip field cannot be empty. Please provide a valid Transaction Slip.']);
+                                                    if(empty($slip) || !isset($slip['tmp_name']) || ($slip['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK){
+                                                        echo json_encode(['status' => "false", 'title' => 'Missing Transaction Slip', 'message' => 'The Transaction slip field cannot be empty. Please upload a valid image or PDF slip.']);
                                                     }else{
                                                         $response_brand = json_decode(getData($db_prefix.'brands',' WHERE brand_id ="'.$response_transaction['response'][0]['brand_id'].'"'),true);
                                                         if($response_brand['status'] == true){
-                                                            $max_file_size = 5 * 1024 * 1024; 
+                                                            $max_file_size = 10 * 1024 * 1024; // 10MB
                                                             
-                                                            $mediaUpload = json_decode(uploadImage($slip ?? null, $max_file_size), true);
-                                                            if($mediaUpload['status'] == true){
+                                                            $mediaUpload = json_decode(uploadSlipFile($slip, $max_file_size), true);
+                                                            if(!empty($mediaUpload['status']) && $mediaUpload['status'] == true){
                                                                 $trx_slip = $site_url.'pp-media/storage/'.$mediaUpload['file'];
                                                             }else{
-                                                                echo json_encode(['status' => "false", 'title' => 'Missing Transaction Slip', 'message' => 'The Transaction slip field cannot be empty. Please provide a valid Transaction Slip.']);
+                                                                $uploadMsg = !empty($mediaUpload['message']) ? $mediaUpload['message'] : 'The Transaction slip could not be uploaded. Please provide a valid file.';
+                                                                echo json_encode(['status' => "false", 'title' => 'Invalid Transaction Slip', 'message' => $uploadMsg]);
                                                                 exit();
                                                             }
 
