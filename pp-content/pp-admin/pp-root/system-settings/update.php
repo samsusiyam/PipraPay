@@ -347,21 +347,46 @@ if (is_dir($backup_dir)) {
                     <div class="card-body p-4" id="changelog-container">
                         <?php
                         if (!empty($lasted_update_release_notes)) {
-                            $lines = explode("\n", $lasted_update_release_notes);
+                            $normalizedNotes = str_replace(["\\r\\n", "\\n", "\\r"], "\n", $lasted_update_release_notes);
+                            $lines = explode("\n", $normalizedNotes);
                             echo '<ul class="list-unstyled space-y-2 mb-0">';
                             foreach ($lines as $line) {
                                 $trimmed = trim($line);
                                 if (empty($trimmed)) continue;
                                 
                                 // Format bullets
-                                if (str_starts_with($trimmed, '•') || str_starts_with($trimmed, '-')) {
-                                    $content = ltrim($trimmed, '•- ');
+                                if (str_starts_with($trimmed, '•') || str_starts_with($trimmed, '-') || str_starts_with($trimmed, '*')) {
+                                    $content = ltrim($trimmed, '•-* ');
+                                    
+                                    // Assign smart contextual badge
+                                    $badge = '✨';
+                                    $badgeClass = 'bg-primary-lt';
+                                    if (stripos($content, 'UI/UX') !== false || stripos($content, 'Overhaul') !== false || stripos($content, 'Design') !== false) {
+                                        $badge = '🎨';
+                                        $badgeClass = 'bg-purple-lt';
+                                    } elseif (stripos($content, 'Backup') !== false || stripos($content, 'Snapshot') !== false) {
+                                        $badge = '💾';
+                                        $badgeClass = 'bg-teal-lt';
+                                    } elseif (stripos($content, 'Notification') !== false || stripos($content, 'Alert') !== false || stripos($content, 'Telegram') !== false || stripos($content, 'Discord') !== false || stripos($content, 'WhatsApp') !== false) {
+                                        $badge = '🔔';
+                                        $badgeClass = 'bg-azure-lt';
+                                    } elseif (stripos($content, 'Health') !== false || stripos($content, 'Compatibility') !== false || stripos($content, 'Security') !== false) {
+                                        $badge = '🛡️';
+                                        $badgeClass = 'bg-green-lt';
+                                    } elseif (stripos($content, 'Upload') !== false || stripos($content, 'Manual') !== false || stripos($content, 'Offline') !== false) {
+                                        $badge = '📦';
+                                        $badgeClass = 'bg-yellow-lt';
+                                    } elseif (stripos($content, 'Fix') !== false || stripos($content, 'Performance') !== false || stripos($content, 'Improvement') !== false) {
+                                        $badge = '⚡';
+                                        $badgeClass = 'bg-orange-lt';
+                                    }
+
                                     echo '<li class="d-flex align-items-start gap-2 mb-2">
-                                            <span class="badge bg-primary-lt mt-1">✨</span>
-                                            <span>' . htmlspecialchars($content) . '</span>
+                                            <span class="badge ' . $badgeClass . ' mt-1">' . $badge . '</span>
+                                            <span class="text-secondary">' . htmlspecialchars($content) . '</span>
                                           </li>';
                                 } else {
-                                    echo '<p class="fw-bold text-dark mb-2">' . htmlspecialchars($trimmed) . '</p>';
+                                    echo '<h5 class="fw-bold text-dark mb-2">' . htmlspecialchars($trimmed) . '</h5>';
                                 }
                             }
                             echo '</ul>';
@@ -369,16 +394,20 @@ if (is_dir($backup_dir)) {
                             echo '
                             <ul class="list-unstyled space-y-2 mb-0">
                                 <li class="d-flex align-items-start gap-2 mb-2">
-                                    <span class="badge bg-primary-lt mt-1">✨</span>
-                                    <span>Major UI/UX redesign of update system with live stepper and progress bar.</span>
+                                    <span class="badge bg-purple-lt mt-1">🎨</span>
+                                    <span class="text-secondary">Major UI/UX redesign of update system with interactive 4-step stepper and animated progress bar.</span>
                                 </li>
                                 <li class="d-flex align-items-start gap-2 mb-2">
-                                    <span class="badge bg-azure-lt mt-1">🛡️</span>
-                                    <span>Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord, WhatsApp, Email, SMS).</span>
+                                    <span class="badge bg-azure-lt mt-1">🔔</span>
+                                    <span class="text-secondary">Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, SMTP Email, SMS Gateway).</span>
                                 </li>
                                 <li class="d-flex align-items-start gap-2 mb-2">
                                     <span class="badge bg-teal-lt mt-1">💾</span>
-                                    <span>Safety Backup Snapshot management with one-click download & delete options.</span>
+                                    <span class="text-secondary">Safety Backup Snapshot management with one-click direct file download & delete options.</span>
+                                </li>
+                                <li class="d-flex align-items-start gap-2 mb-2">
+                                    <span class="badge bg-green-lt mt-1">🛡️</span>
+                                    <span class="text-secondary">Pre-flight system health and PHP environment compatibility diagnostics.</span>
                                 </li>
                             </ul>';
                         }
