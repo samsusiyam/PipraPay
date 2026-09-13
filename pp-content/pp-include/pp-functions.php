@@ -1692,17 +1692,40 @@
 
     function zipFolder($source, $zipFile) {
         $zip = new ZipArchive;
-        $zip->open($zipFile, ZipArchive::CREATE);
+        if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        $source = str_replace('\\', '/', realpath($source));
+
         $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($source)
+            new RecursiveDirectoryIterator($source, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($files as $file) {
-            if (!$file->isDir()) {
-                $zip->addFile($file, substr($file, strlen($source) + 1));
+            $filePath = str_replace('\\', '/', $file->getRealPath());
+            $relativePath = substr($filePath, strlen($source) + 1);
+
+            // Skip heavy, backup, or runtime storage directories to prevent recursion & timeouts
+            if (
+                str_starts_with($relativePath, '.git') ||
+                str_starts_with($relativePath, 'pp-media/storage/backup') ||
+                str_starts_with($relativePath, 'pp-media/storage/temp') ||
+                str_starts_with($relativePath, 'pp-media/storage/updates') ||
+                $relativePath === '.maintenance'
+            ) {
+                continue;
+            }
+
+            if ($file->isDir()) {
+                $zip->addEmptyDir($relativePath);
+            } elseif ($file->isFile()) {
+                $zip->addFile($filePath, $relativePath);
             }
         }
         $zip->close();
+        return true;
     }
 
     function runSql($file) {
@@ -1717,7 +1740,6 @@
         try {
             $pdo->beginTransaction();
 
-            // Split SQL safely
             $queries = array_filter(array_map('trim', explode(";\n", $sql)));
 
             foreach ($queries as $query) {
@@ -1737,79 +1759,101 @@
     }
 
     function backupDatabasePDO($backupPath) {
-        $pdo = connectDatabase();
-        $pdo->exec("SET NAMES utf8mb4");
+        try {
+            $pdo = connectDatabase();
+            $pdo->exec("SET NAMES utf8mb4");
 
-        $fh = fopen($backupPath, 'w');
+            $fh = fopen($backupPath, 'w');
+            if (!$fh) return false;
 
-        fwrite($fh, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+            fwrite($fh, "SET FOREIGN_KEY_CHECKS=0;\n\n");
 
-        $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+            $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
 
-        foreach ($tables as $table) {
+            foreach ($tables as $table) {
+                $createRes = $pdo->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_NUM);
+                $create = $createRes[1] ?? '';
+                fwrite($fh, "DROP TABLE IF EXISTS `$table`;\n$create;\n\n");
 
-            $create = $pdo->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_NUM)[1];
-            fwrite($fh, "DROP TABLE IF EXISTS `$table`;\n$create;\n\n");
-
-            $stmt = $pdo->query("SELECT * FROM `$table`", PDO::FETCH_ASSOC);
-            foreach ($stmt as $row) {
-                $vals = [];
-                foreach ($row as $val) {
-                    $vals[] = ($val === null) ? "NULL" : $pdo->quote($val);
+                $stmt = $pdo->query("SELECT * FROM `$table`", PDO::FETCH_ASSOC);
+                foreach ($stmt as $row) {
+                    $vals = [];
+                    foreach ($row as $val) {
+                        $vals[] = ($val === null) ? "NULL" : $pdo->quote($val);
+                    }
+                    fwrite($fh, "INSERT INTO `$table` VALUES (" . implode(',', $vals) . ");\n");
                 }
-                fwrite($fh, "INSERT INTO `$table` VALUES (" . implode(',', $vals) . ");\n");
+
+                fwrite($fh, "\n");
             }
 
-            fwrite($fh, "\n");
+            fwrite($fh, "SET FOREIGN_KEY_CHECKS=1;\n");
+            fclose($fh);
+            return true;
+        } catch (Throwable $e) {
+            error_log('Database backup error: ' . $e->getMessage());
+            return false;
         }
-
-        fwrite($fh, "SET FOREIGN_KEY_CHECKS=1;\n");
-        fclose($fh);
     }
 
     function extractUpdate($zipFile, $destination) {
-        $zip = new ZipArchive;
-        if ($zip->open($zipFile) !== true) {
-            throw new Exception("Cannot open ZIP file");
+        if (!file_exists($zipFile)) {
+            throw new Exception("Update ZIP file not found.");
         }
 
-        // Detect top-level folder in zip
+        $zip = new ZipArchive;
+        if ($zip->open($zipFile) !== true) {
+            throw new Exception("Cannot open update ZIP file.");
+        }
+
+        // Detect top-level folder in zip (e.g., PipraPay-main/)
         $topFolder = '';
         if ($zip->numFiles > 0) {
             $firstFile = $zip->getNameIndex(0);
             $parts = explode('/', $firstFile);
-            if (count($parts) > 1) $topFolder = $parts[0] . '/';
+            if (count($parts) > 1 && $parts[0] !== '') {
+                $topFolder = $parts[0] . '/';
+            }
         }
 
-        // Extract each file manually to remove top-level folder
+        @mkdir($destination, 0755, true);
+
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entry = $zip->getNameIndex($i);
 
-            // Remove top folder prefix
-            if ($topFolder && str_starts_with($entry, $topFolder)) {
+            // Remove top folder prefix if present
+            if ($topFolder !== '' && str_starts_with($entry, $topFolder)) {
                 $entryNew = substr($entry, strlen($topFolder));
             } else {
                 $entryNew = $entry;
             }
 
-            if ($entryNew === '') continue; // skip folder itself
+            if ($entryNew === '' || $entryNew === false) continue;
 
-            // Protect sensitive files and directories from being overwritten
-            if ($entryNew === 'pp-config.php' || str_starts_with($entryNew, 'pp-media/storage/') || str_starts_with($entryNew, '.git')) {
+            // Protect sensitive files and directories
+            if (
+                $entryNew === 'pp-config.php' ||
+                str_starts_with($entryNew, 'pp-media/storage/') ||
+                str_starts_with($entryNew, '.git')
+            ) {
                 continue;
             }
 
-            $targetPath = $destination . '/' . $entryNew;
+            $targetPath = rtrim($destination, '/\\') . '/' . $entryNew;
 
-            if (substr($entry, -1) === '/') { // folder
+            if (substr($entry, -1) === '/') {
                 @mkdir($targetPath, 0755, true);
-            } else { // file
+            } else {
                 @mkdir(dirname($targetPath), 0755, true);
-                copy("zip://$zipFile#$entry", $targetPath);
+                $fileData = $zip->getFromIndex($i);
+                if ($fileData !== false) {
+                    file_put_contents($targetPath, $fileData);
+                }
             }
         }
 
         $zip->close();
+        return true;
     }
 
     function addQueryParams($url, $params = []) {

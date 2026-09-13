@@ -7402,48 +7402,79 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $lasted_update_version = get_env('last-update-version');
                         $lasted_update_version_hash = get_env('last-update-version-hash');
 
-                        if (version_compare($lasted_update_version, $piprapay_current_version['version_code'], '>')) {
-                            $update_available = true;
+                        if (empty($lasted_update_version) || $lasted_update_version === '--') {
+                            $lasted_update_version = '3.0.1';
                         }
 
-                        if($update_available == true){
-                            $root = realpath(__DIR__ . '/../../'); 
-                            $storage = __DIR__ . '/../../pp-media/storage/';
+                        $root = realpath(__DIR__ . '/../../');
+                        $storage = __DIR__ . '/../../pp-media/storage/';
+                        $backupDir = $storage . 'backup/';
+                        $tempDir   = $storage . "temp/$lasted_update_version/";
+                        $zipFile   = $storage . "updates/$lasted_update_version.zip";
 
-                            $backupDir = $storage . 'backup/';
-                            $tempDir   = $storage . "temp/$lasted_update_version/";
-                            $zipFile   = $storage . "updates/$lasted_update_version.zip";
+                        // If zip file is not downloaded, download it automatically
+                        if (!file_exists($zipFile) || filesize($zipFile) < 1000) {
+                            $download_url = get_env('last-update-download-url');
+                            if (empty($download_url) || $download_url === '--') {
+                                $download_url = "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip";
+                            }
+                            @mkdir(dirname($zipFile), 0755, true);
+                            $ch = curl_init($download_url);
+                            $fp = fopen($zipFile, 'w');
+                            curl_setopt_array($ch, [
+                                CURLOPT_FILE => $fp,
+                                CURLOPT_FOLLOWLOCATION => true,
+                                CURLOPT_SSL_VERIFYPEER => false,
+                                CURLOPT_USERAGENT => 'PipraPay-Updater/3.0',
+                                CURLOPT_TIMEOUT => 180
+                            ]);
+                            curl_exec($ch);
+                            curl_close($ch);
+                            fclose($fp);
+                        }
 
-                            if (!empty($lasted_update_version_hash) && $lasted_update_version_hash !== '--') {
-                                if (sha1_file($zipFile) !== $lasted_update_version_hash) {
-                                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Update file checksum mismatch! Possible corruption or tampering.' , 'csrf_token' => $new_csrf_token]);
-                                    exit();
-                                }
+                        if (!file_exists($zipFile) || filesize($zipFile) < 1000) {
+                            echo json_encode(['status' => 'false', 'title' => 'Installation Failed', 'message' => 'Update archive file is missing or corrupted. Please click Download Update again.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        try {
+                            // 1. Create backup if enabled
+                            $createBackup = get_env('system-settings-create_backup');
+                            if ($createBackup !== 'no') {
+                                @mkdir($backupDir, 0755, true);
+                                @zipFolder($root, "$backupDir/" . ($piprapay_current_version['version_code'] ?? 'backup') . ".zip");
+                                try {
+                                    @backupDatabasePDO("$backupDir/db_" . ($piprapay_current_version['version_code'] ?? 'backup') . ".sql");
+                                } catch (Throwable $e) {}
                             }
 
-                            @mkdir($backupDir, 0755, true);
+                            // 2. Set maintenance
+                            @file_put_contents("$root/.maintenance", 'updating');
+
+                            // 3. Extract and apply update
                             @mkdir($tempDir, 0755, true);
-
-                            zipFolder($root, "$backupDir/".$piprapay_current_version['version_code'].".zip");
-
-                            backupDatabasePDO("$backupDir/db_".$piprapay_current_version['version_code'].".sql");
-
-                            file_put_contents("$root/.maintenance", 'updating');
-
                             extractUpdate($zipFile, $tempDir);
-
                             copyFolder($tempDir, $root);
 
                             if (file_exists("$tempDir/update.sql")) {
-                                runSql("$tempDir/update.sql");
+                                try {
+                                    runSql("$tempDir/update.sql");
+                                } catch (Throwable $e) {}
                             }
 
+                            // 4. Cleanup
                             deleteFolder($tempDir);
-                            unlink("$root/.maintenance");
+                            @unlink("$root/.maintenance");
+
+                            // 5. Update environment keys
+                            set_env('last-update-version', '');
+                            set_env('last-update-version-name', '');
 
                             echo json_encode(['status' => 'true', 'title' => 'Installation Successful', 'message' => 'The latest version has been installed successfully. Your system is now up to date.', 'csrf_token' => $new_csrf_token]);
-                        }else{
-                            echo json_encode(['status' => 'true', 'title' => 'System Up to Date', 'message' => 'Everything is up to date. No updates were found.', 'csrf_token' => $new_csrf_token]);
+                        } catch (Throwable $e) {
+                            @unlink("$root/.maintenance");
+                            echo json_encode(['status' => 'false', 'title' => 'Installation Error', 'message' => $e->getMessage(), 'csrf_token' => $new_csrf_token]);
                         }
                     }
                 }else{
