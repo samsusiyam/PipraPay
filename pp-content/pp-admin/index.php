@@ -905,11 +905,14 @@
         initHugeRTE();
 
         function getAdminPath(url) {
+            if (!url) return 'dashboard';
             let cleanUrl = url.split('?')[0]; 
-            let index = cleanUrl.indexOf('<?php echo $path_admin?>/');
-            if (index === -1) return '';
+            let adminSlug = '<?php echo trim($path_admin, "/"); ?>';
+            let index = cleanUrl.indexOf(adminSlug);
+            if (index === -1) return 'dashboard';
             
-            return cleanUrl.substring(index + '<?php echo $path_admin?>/'.length).replace(/^\/+/, '');
+            let afterAdmin = cleanUrl.substring(index + adminSlug.length).replace(/^\/+|\/+$/g, '');
+            return afterAdmin === '' ? 'dashboard' : afterAdmin;
         }
 
         function getQueryParams(url) {

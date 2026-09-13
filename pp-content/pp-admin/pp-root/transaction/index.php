@@ -497,55 +497,45 @@
     }
 
     $(document).off('click', '.table-data-list-pagination button').on('click', '.table-data-list-pagination button', function () {
-        let page = $(this).data('page');
+        var page = $(this).data('page');
         load_data_list(page);
     });
 
-    load_data_list(1);
-
     function filter_hide_show_reset(className) {
-        const container = document.querySelector('.' + className);
+        var container = document.querySelector('.' + className);
         if (!container) return;
 
         // Reset inputs
-        container.querySelectorAll('input').forEach(input => {
+        container.querySelectorAll('input').forEach(function(input) {
             input.value = '';
         });
 
         // Reset selects
-        container.querySelectorAll('select').forEach(select => {
+        container.querySelectorAll('select').forEach(function(select) {
             select.selectedIndex = 0;
         });
 
         load_data_list(1);
     }
 
-    let searchTimer = null;
-    document.querySelectorAll('.search_input').forEach(el => {
-        el.addEventListener('input', function () {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                load_data_list(1);
-            }, 300);
-        });
-    });
-
-    document.querySelectorAll('.filter-tab-data input, .filter-tab-data select, .show_limit').forEach(el => {
-        el.addEventListener('change', function () {
+    var searchTimer = null;
+    $(document).off('input', '.search_input').on('input', '.search_input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
             load_data_list(1);
-        });
+        }, 300);
     });
 
-    document.querySelectorAll('#statusTabs .nav-link').forEach(btn => {
-        btn.addEventListener('click', function () {
-
-            document.querySelectorAll('#statusTabs .nav-link').forEach(b => b.classList.remove('active'));
-
-            this.classList.add('active');
-
-            const type = this.dataset.type;
-
-            load_data_list(1);
-        });
+    $(document).off('change', '.filter-tab-data input, .filter-tab-data select, .show_limit').on('change', '.filter-tab-data input, .filter-tab-data select, .show_limit', function () {
+        load_data_list(1);
     });
+
+    $(document).off('click', '#statusTabs .nav-link').on('click', '#statusTabs .nav-link', function () {
+        $('#statusTabs .nav-link').removeClass('active');
+        $(this).addClass('active');
+        load_data_list(1);
+    });
+
+    // Execute initial load
+    load_data_list(1);
 </script>
