@@ -248,12 +248,12 @@ if (is_dir($backup_dir)) {
                             <?php endif; ?>
                         </div>
                         <h2 class="card-title h1 text-primary mb-1" id="update-target-title">
-                            Upgrade to <span id="lbl-target-version"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.1'); ?></span>
+                            Upgrade to <span id="lbl-target-version"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.2'); ?></span>
                         </h2>
                         <div class="text-muted d-flex align-items-center gap-2">
                             <span>Current: <strong class="badge bg-secondary-lt"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.1'); ?></strong></span>
                             <span>➔</span>
-                            <span>Target: <strong class="badge bg-primary-lt" id="lbl-target-version-badge"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.1'); ?></strong></span>
+                            <span>Target: <strong class="badge bg-primary-lt" id="lbl-target-version-badge"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.2'); ?></strong></span>
                         </div>
                     </div>
 
@@ -370,19 +370,15 @@ if (is_dir($backup_dir)) {
                             <ul class="list-unstyled space-y-2 mb-0">
                                 <li class="d-flex align-items-start gap-2 mb-2">
                                     <span class="badge bg-primary-lt mt-1">✨</span>
-                                    <span>Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, Custom SMTP Email, and SMS Gateway).</span>
+                                    <span>Major UI/UX redesign of update system with live stepper and progress bar.</span>
                                 </li>
                                 <li class="d-flex align-items-start gap-2 mb-2">
                                     <span class="badge bg-azure-lt mt-1">🛡️</span>
-                                    <span>Granular Event Matrix & Device Disconnect / Low Battery Alerts.</span>
+                                    <span>Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord, WhatsApp, Email, SMS).</span>
                                 </li>
                                 <li class="d-flex align-items-start gap-2 mb-2">
-                                    <span class="badge bg-green-lt mt-1">⚡</span>
-                                    <span>Realtime Live Notification Test Tool with instant diagnostic feedback.</span>
-                                </li>
-                                <li class="d-flex align-items-start gap-2 mb-2">
-                                    <span class="badge bg-yellow-lt mt-1">🔧</span>
-                                    <span>Automated Installation Package with automatic schema and database update.</span>
+                                    <span class="badge bg-teal-lt mt-1">💾</span>
+                                    <span>Safety Backup Snapshot management with one-click download & delete options.</span>
                                 </li>
                             </ul>';
                         }
@@ -403,29 +399,37 @@ if (is_dir($backup_dir)) {
         </div>
 
         <!-- Automated Backup Snapshots Card -->
-        <div class="card mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="card mb-4" id="card-backup-snapshots">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <h4 class="card-title d-flex align-items-center gap-2 mb-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon text-teal" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M14 4l0 4l-6 0l0 -4" /></svg>
                     Safety Backup Snapshots
+                    <span class="badge bg-teal-lt ms-1" id="backup-count-badge"><?php echo count($backups); ?> Saved</span>
                 </h4>
-                <span class="badge bg-teal-lt"><?php echo count($backups); ?> Snapshots Saved</span>
+                
+                <?php if (!empty($backups)): ?>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-all-backups">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                        Delete All Snapshots
+                    </button>
+                <?php endif; ?>
             </div>
             <div class="card-body p-0">
                 <?php if (!empty($backups)): ?>
                     <div class="table-responsive">
-                        <table class="table table-vcenter card-table table-hover">
+                        <table class="table table-vcenter card-table table-hover" id="table-backup-snapshots">
                             <thead>
                                 <tr>
                                     <th>Snapshot File</th>
                                     <th>Type</th>
                                     <th>Size</th>
                                     <th>Created Date</th>
+                                    <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($backups as $b): ?>
-                                    <tr>
+                                    <tr id="row-backup-<?php echo md5($b['name']); ?>">
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /></svg>
@@ -435,13 +439,23 @@ if (is_dir($backup_dir)) {
                                         <td><span class="badge bg-blue-lt"><?php echo htmlspecialchars($b['type']); ?></span></td>
                                         <td><?php echo htmlspecialchars($b['size']); ?></td>
                                         <td class="text-muted"><?php echo htmlspecialchars($b['date']); ?></td>
+                                        <td class="text-end">
+                                            <div class="btn-list justify-content-end">
+                                                <a href="<?php echo $site_url.$path_admin; ?>/dashboard?action=system-settings-update-backup-download&file=<?php echo urlencode($b['name']); ?>" class="btn btn-sm btn-icon btn-outline-primary" title="Download Snapshot" download>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete-backup" data-file="<?php echo htmlspecialchars($b['name']); ?>" data-row="row-backup-<?php echo md5($b['name']); ?>" title="Delete Snapshot">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 <?php else: ?>
-                    <div class="text-center py-4 text-muted">
+                    <div class="text-center py-4 text-muted" id="backup-empty-state">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg mb-2 text-secondary" width="36" height="36" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" /><path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /></svg>
                         <div>No backup archives yet. A backup will be generated automatically before each update.</div>
                     </div>
@@ -885,6 +899,132 @@ if (is_dir($backup_dir)) {
                 createToast({
                     title: 'Upload Error',
                     description: 'Failed to upload and apply manual update package.',
+                    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                    timeout: 6000,
+                    top: 70
+                });
+            }
+        });
+    });
+
+    // 7. Delete Single Backup Snapshot
+    $(document).on('click', '.btn-delete-backup', function () {
+        var fileName = $(this).data('file');
+        var rowId = $(this).data('row');
+
+        if (!confirm('Are you sure you want to delete backup snapshot "' + fileName + '"? This cannot be undone.')) {
+            return;
+        }
+
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            type: 'POST',
+            url: '<?php echo $site_url.$path_admin ?>/dashboard',
+            data: {
+                action: "system-settings-update-backup-delete",
+                csrf_token: csrf_token_default,
+                file: fileName
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.csrf_token) {
+                    $('input[name="csrf_token"], input[name="csrf_token_default"]').val(response.csrf_token);
+                }
+
+                if (response.status === 'true') {
+                    $('#' + rowId).fadeOut(300, function () {
+                        $(this).remove();
+                        var count = $('#table-backup-snapshots tbody tr').length;
+                        $('#backup-count-badge').text(count + ' Saved');
+                        if (count === 0) {
+                            load_content('System Settings','<?php echo $site_url.$path_admin ?>/system-settings/update','nav-item-system-settings');
+                        }
+                    });
+
+                    createToast({
+                        title: response.title || 'Deleted',
+                        description: response.message,
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f38f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>`,
+                        timeout: 5000,
+                        top: 70
+                    });
+                } else {
+                    $btn.prop('disabled', false);
+                    createToast({
+                        title: response.title || 'Delete Failed',
+                        description: response.message,
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                        timeout: 6000,
+                        top: 70
+                    });
+                }
+            },
+            error: function () {
+                $btn.prop('disabled', false);
+                createToast({
+                    title: 'Error',
+                    description: 'Could not connect to server to delete snapshot.',
+                    svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                    timeout: 6000,
+                    top: 70
+                });
+            }
+        });
+    });
+
+    // 8. Delete All Backup Snapshots
+    $('.btn-delete-all-backups').click(function () {
+        if (!confirm('Are you sure you want to delete ALL safety backup snapshots? This action cannot be undone.')) {
+            return;
+        }
+
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Deleting...');
+
+        $.ajax({
+            type: 'POST',
+            url: '<?php echo $site_url.$path_admin ?>/dashboard',
+            data: {
+                action: "system-settings-update-backup-delete",
+                csrf_token: csrf_token_default,
+                delete_all: "yes"
+            },
+            dataType: 'json',
+            success: function (response) {
+                if (response.csrf_token) {
+                    $('input[name="csrf_token"], input[name="csrf_token_default"]').val(response.csrf_token);
+                }
+
+                if (response.status === 'true') {
+                    createToast({
+                        title: response.title || 'Backups Cleared',
+                        description: response.message,
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f38f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>`,
+                        timeout: 5000,
+                        top: 70
+                    });
+
+                    load_content('System Settings','<?php echo $site_url.$path_admin ?>/system-settings/update','nav-item-system-settings');
+                } else {
+                    $btn.prop('disabled', false).text('Delete All Snapshots');
+                    createToast({
+                        title: response.title || 'Failed',
+                        description: response.message,
+                        svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                        timeout: 6000,
+                        top: 70
+                    });
+                }
+            },
+            error: function () {
+                $btn.prop('disabled', false).text('Delete All Snapshots');
+                createToast({
+                    title: 'Error',
+                    description: 'Could not connect to server to delete snapshots.',
                     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d63939" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-exclamation-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
                     timeout: 6000,
                     top: 70
