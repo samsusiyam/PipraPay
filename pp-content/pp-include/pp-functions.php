@@ -2087,7 +2087,13 @@
         }
     }
 
-    if (!class_exists('PipraPayReceiptPDF')) {
+    if (!class_exists('FPDF')) {
+        if (file_exists(__DIR__ . '/../../pp-media/sdk/fpdf/fpdf.php')) {
+            require_once __DIR__ . '/../../pp-media/sdk/fpdf/fpdf.php';
+        }
+    }
+
+    if (!class_exists('PipraPayReceiptPDF') && class_exists('FPDF')) {
         class PipraPayReceiptPDF extends FPDF
         {
             public function RoundedRect($x, $y, $w, $h, $r, $style = '', $corners = '1234')

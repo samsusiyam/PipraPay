@@ -215,7 +215,7 @@
     }
 
     if(file_exists(__DIR__ . '/../../pp-media/sdk/fpdf/fpdf.php')){
-        require __DIR__ . '/../../pp-media/sdk/fpdf/fpdf.php';
+        require_once __DIR__ . '/../../pp-media/sdk/fpdf/fpdf.php';
     }else{
         http_response_code(403);
         exit('SDK Missing');
