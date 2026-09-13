@@ -76,6 +76,11 @@
                                     Used
                                 </button>
                             </li>
+                            <li class="nav-item">
+                                <button class="nav-link text-danger" data-type="error">
+                                    Error / Failed
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -101,6 +106,7 @@
                                                 <option value="approved">Approved</option>
                                                 <option value="awaiting-review">Awaiting review</option>
                                                 <option value="used">Used</option>
+                                                <option value="error">Error / Failed</option>
                                             </select>
                                         </div>
                                     </div>
@@ -709,6 +715,7 @@
                         if (item.status === 'approved') badge = 'success';
                         if (item.status === 'awaiting-review') badge = 'warning';
                         if (item.status === 'used') badge = 'primary';
+                        if (item.status === 'error') badge = 'danger';
 
                         html += `
                             <tr data-id="${item.id}">
