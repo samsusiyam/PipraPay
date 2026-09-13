@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.1",
-            "latest_version_code": "3.0.1",
-            "release_notes": "PipraPay v3.0.1 Update:\n• Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, Custom SMTP Email, and SMS Gateway).\n• Granular Event Routing Matrix (Admin Payment Success/Failed Alerts, Companion Device Offline Alerts, Device Low Battery Alerts, Customer Email Receipts & SMS Confirmations).\n• Realtime Live Notification Test Tool.\n• Automated Installation Package with schema restoration.\n• Performance optimizations and bug fixes.",
-            "release_date": "2026-09-13",
+            "latest_version_name": "v3.0.2",
+            "latest_version_code": "3.0.2",
+            "release_notes": "PipraPay v3.0.2 Major UI/UX & Engine Update:\n• Complete Redesign of System Update page with interactive 4-step workflow.\n• Realtime animated progress bar & live deployment status console.\n• Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, Custom SMTP Email, and SMS Gateway).\n• Granular Event Routing Matrix & Device Disconnect / Low Battery Alerts.\n• Pre-flight server health diagnostics & system compatibility check.\n• Automated pre-update safety backup snapshots.\n• Manual ZIP archive uploader for offline environments.\n• Performance optimizations and bug fixes.",
+            "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.2",
+                    "version_code": "3.0.2",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.1",
                     "version_code": "3.0.1",
@@ -22,12 +28,18 @@
             ]
         },
         "beta": {
-            "latest_version_name": "v3.0.1-beta",
-            "latest_version_code": "3.0.1",
-            "release_notes": "PipraPay v3.0.1-beta Update:\n• Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, Custom SMTP Email, and SMS Gateway).\n• Granular Event Routing Matrix.\n• Realtime Live Notification Test Tool.\n• Automated Installation Package.\n• Performance optimizations and bug fixes.",
-            "release_date": "2026-09-13",
+            "latest_version_name": "v3.0.2-beta",
+            "latest_version_code": "3.0.2",
+            "release_notes": "PipraPay v3.0.2 Major UI/UX & Engine Update:\n• Complete Redesign of System Update page with interactive 4-step workflow.\n• Realtime animated progress bar & live deployment status console.\n• Instant Alert & Multi-Channel Notification Engine (Telegram Bot, Discord Webhook, WhatsApp API, Custom SMTP Email, and SMS Gateway).\n• Granular Event Routing Matrix & Device Disconnect / Low Battery Alerts.\n• Pre-flight server health diagnostics & system compatibility check.\n• Automated pre-update safety backup snapshots.\n• Manual ZIP archive uploader for offline environments.\n• Performance optimizations and bug fixes.",
+            "release_date": "2026-09-14",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.2-beta",
+                    "version_code": "3.0.2",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.1-beta",
                     "version_code": "3.0.1",
