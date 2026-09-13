@@ -824,7 +824,7 @@
                 'name'     => 'Cellfin',
                 'currency' => 'BDT',
                 'balance_verify' => 'false',
-                'senders'  => ['ibbl .'],
+                'senders'  => ['ibbl', 'cellfin', 'ibbl .'],
             ],
             'okwallet' => [
                 'name'     => 'Ok Wallet',

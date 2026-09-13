@@ -6166,7 +6166,7 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             ];
                         }
 
-                        $count_data = json_decode(getData($db_prefix.'sms_data',' WHERE '.$where_sql.' device_id NOT IN ("00") AND status NOT IN ("error") '.$sql_query),true);
+                        $count_data = json_decode(getData($db_prefix.'sms_data',' WHERE '.$where_sql.' device_id NOT IN ("00") '.$error_exclusion.' '.$sql_query),true);
 
 
                         $total_records = count($count_data['response'] ?? []);
@@ -9200,6 +9200,54 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             echo json_encode(['status' => "false", 'title' => 'Invalid Credentials', 'message' => 'Please enter the correct credentials or scan the QR code again.']);
                         }
                     }
+                }
+            }
+
+                        if($action == "live-recent-payments"){
+                if($global_user_login == true){
+                    $last_id = intval($_POST['last_id'] ?? 0);
+                    $brand_id = $global_response_brand['response'][0]['brand_id'] ?? '';
+                    
+                    $condition = ' WHERE status = "completed" AND brand_id = "'.$brand_id.'"';
+                    if($last_id > 0){
+                        $condition .= ' AND id > '.$last_id;
+                    } else {
+                        $condition .= ' ORDER BY id DESC LIMIT 5';
+                    }
+
+                    $response_tx = json_decode(getData($db_prefix.'transaction', $condition . ' ORDER BY id DESC LIMIT 10'), true);
+                    $new_payments = [];
+                    $max_id = $last_id;
+
+                    if($response_tx['status'] == true && !empty($response_tx['response'])){
+                        foreach($response_tx['response'] as $tx){
+                            $txId = intval($tx['id']);
+                            if($txId > $max_id) $max_id = $txId;
+
+                            $cust = json_decode($tx['customer_info'], true) ?: [];
+                            $new_payments[] = [
+                                'id'       => $txId,
+                                'ref'      => $tx['ref'],
+                                'amount'   => money_round($tx['amount'], 2),
+                                'currency' => $tx['currency'],
+                                'gateway'  => $tx['sender_key'] ?: 'Payment',
+                                'sender'   => $tx['sender'],
+                                'trx_id'   => $tx['trx_id'],
+                                'name'     => $cust['name'] ?? 'Customer',
+                                'time'     => convertUTCtoUserTZ($tx['updated_date'], 'Asia/Dhaka', 'h:i:s A')
+                            ];
+                        }
+                    }
+
+                    echo json_encode([
+                        'status'   => 'true',
+                        'last_id'  => $max_id,
+                        'payments' => $new_payments
+                    ]);
+                    exit();
+                } else {
+                    echo json_encode(['status' => 'false', 'message' => 'Unauthorized']);
+                    exit();
                 }
             }
 

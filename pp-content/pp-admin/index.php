@@ -1058,5 +1058,132 @@
             load_content(pageTitle, currentUrl, nav_id, true);
         });
     </script>
+    <!-- Live Payment Audio & Toast Notification Engine -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 99999;" id="livePaymentToastContainer"></div>
+    <script>
+        // Web Audio API Cash Chime Synthesizer
+        function playPaymentChime() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                // Note 1: E5 (659.25Hz)
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(659.25, ctx.currentTime);
+                gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start();
+                osc1.stop(ctx.currentTime + 0.35);
+
+                // Note 2: B5 (987.77Hz) - pleasant chime harmony
+                setTimeout(() => {
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(987.77, ctx.currentTime);
+                    gain2.gain.setValueAtTime(0.4, ctx.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start();
+                    osc2.stop(ctx.currentTime + 0.55);
+                }, 120);
+
+                // Note 3: High Sparkle E6 (1318.5Hz)
+                setTimeout(() => {
+                    const osc3 = ctx.createOscillator();
+                    const gain3 = ctx.createGain();
+                    osc3.type = 'sine';
+                    osc3.frequency.setValueAtTime(1318.51, ctx.currentTime);
+                    gain3.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain3.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+                    osc3.connect(gain3);
+                    gain3.connect(ctx.destination);
+                    osc3.start();
+                    osc3.stop(ctx.currentTime + 0.7);
+                }, 240);
+            } catch (e) {
+                console.warn('Live audio error:', e);
+            }
+        }
+
+        function showPaymentToast(payment) {
+            const container = document.getElementById('livePaymentToastContainer');
+            if (!container) return;
+
+            const toastId = 'toast-' + Date.now() + '-' + Math.floor(Math.random()*1000);
+            const toastHtml = `
+                <div id="${toastId}" class="toast show shadow-lg border-0" role="alert" aria-live="assertive" aria-atomic="true" style="background: #ffffff; border-left: 5px solid #29a56c !important; border-radius: 12px; min-width: 320px;">
+                    <div class="toast-header bg-transparent border-0 pb-0 pt-3 px-3">
+                        <span class="badge bg-success-lt text-success fw-bold me-2 px-2 py-1">
+                            <span class="spinner-grow spinner-grow-sm me-1" role="status" style="width: 8px; height: 8px;"></span> Live Payment
+                        </span>
+                        <strong class="me-auto text-dark">${payment.gateway.toUpperCase()}</strong>
+                        <small class="text-muted">${payment.time || 'Just now'}</small>
+                        <button type="button" class="btn-close ms-2" onclick="document.getElementById('${toastId}').remove()"></button>
+                    </div>
+                    <div class="toast-body pt-2 pb-3 px-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <h3 class="mb-0 text-success fw-bold">${payment.currency} ${payment.amount}</h3>
+                            <span class="badge bg-light text-dark border">${payment.trx_id ? 'TrxID: ' + payment.trx_id : payment.ref}</span>
+                        </div>
+                        <div class="text-secondary small mt-1">
+                            <span>From: <strong>${payment.sender || payment.name}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', toastHtml);
+
+            // Auto dismiss after 8 seconds
+            setTimeout(() => {
+                const el = document.getElementById(toastId);
+                if (el) el.remove();
+            }, 8000);
+        }
+
+        let lastSeenPaymentId = 0;
+        let isInitialLiveCheck = true;
+
+        function checkLiveRecentPayments() {
+            $.ajax({
+                url: '<?php echo $site_url ?>',
+                type: 'POST',
+                data: {
+                    action: 'live-recent-payments',
+                    last_id: lastSeenPaymentId,
+                    csrf_token: '<?php echo $csrf_token ?? "" ?>'
+                },
+                dataType: 'json',
+                success: function(res) {
+                    if (res && res.status === 'true') {
+                        if (res.last_id) {
+                            if (isInitialLiveCheck) {
+                                lastSeenPaymentId = res.last_id;
+                                isInitialLiveCheck = false;
+                            } else if (res.payments && res.payments.length > 0) {
+                                res.payments.forEach(payment => {
+                                    if (payment.id > lastSeenPaymentId) {
+                                        playPaymentChime();
+                                        showPaymentToast(payment);
+                                    }
+                                });
+                                lastSeenPaymentId = res.last_id;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Start polling every 7 seconds
+        setInterval(checkLiveRecentPayments, 7000);
+        setTimeout(checkLiveRecentPayments, 2000);
+    </script>
 </body>
 </html>
