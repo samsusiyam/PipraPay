@@ -7293,19 +7293,45 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             }
                         }
 
+                        $release_notes = $channel_data['release_notes'] ?? '';
+                        $release_date  = $channel_data['release_date'] ?? '';
+
                         if($update_available == true){
                             set_env('last-update-version-name', $latest_name);
                             set_env('last-update-version-hash', $latest_hash);
                             set_env('last-update-version', $latest_code);
                             set_env('last-update-download-url', $download_url);
+                            set_env('last-update-release-notes', $release_notes);
+                            set_env('last-update-release-date', $release_date);
 
-                            echo json_encode(['status' => 'true', 'title' => 'Update Available', 'message' => 'A new system update (' . $latest_name . ') is available on GitHub. Please update to get the latest features.', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode([
+                                'status' => 'true',
+                                'title' => 'Update Available',
+                                'message' => 'A new system update (' . $latest_name . ') is available on GitHub. Please update to get the latest features.',
+                                'csrf_token' => $new_csrf_token,
+                                'update_available' => true,
+                                'version_name' => $latest_name,
+                                'version_code' => $latest_code,
+                                'release_notes' => $release_notes,
+                                'release_date' => $release_date,
+                                'download_url' => $download_url
+                            ]);
                         }else{
                             set_env('last-update-version-name', $current_name);
                             set_env('last-update-version-hash', $version_hash);
                             set_env('last-update-version', $current_code);
+                            set_env('last-update-release-notes', '');
+                            set_env('last-update-release-date', '');
 
-                            echo json_encode(['status' => 'true', 'title' => 'System Up to Date', 'message' => 'Everything is up to date. You are running the latest version (' . $current_name . ').', 'csrf_token' => $new_csrf_token]);
+                            echo json_encode([
+                                'status' => 'true',
+                                'title' => 'System Up to Date',
+                                'message' => 'Everything is up to date. You are running the latest version (' . $current_name . ').',
+                                'csrf_token' => $new_csrf_token,
+                                'update_available' => false,
+                                'version_name' => $current_name,
+                                'version_code' => $current_code
+                            ]);
                         }
                     }
                 }else{
@@ -7478,6 +7504,89 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         } catch (Throwable $e) {
                             @unlink("$root/.maintenance");
                             echo json_encode(['status' => 'false', 'title' => 'Installation Error', 'message' => $e->getMessage(), 'csrf_token' => $new_csrf_token]);
+                        }
+                    }
+                }else{
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
+                        if($action == "system-settings-update-manual-upload"){
+                if($global_user_login == true){
+                    if (!empty($pp_demo_mode)) {
+                        echo json_encode(['status' => "false", 'title' => 'Demo Restriction', 'message' => 'This feature is disabled in the demo version.', 'csrf_token' => $new_csrf_token]);
+                    }else{
+                        if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', $global_user_response['response'][0]['role']) ||
+                            !hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'system_settings', 'manage_update', $global_user_response['response'][0]['role'])) {
+                            echo json_encode(['status' => 'false', 'title' => 'Access denied', 'message' => 'You need permission to perform this action. Please contact the admin.' , 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        if (!isset($_FILES['update_zip']) || $_FILES['update_zip']['error'] !== UPLOAD_ERR_OK) {
+                            echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => 'No valid zip archive uploaded or file upload error.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        $fileTmp = $_FILES['update_zip']['tmp_name'];
+                        $fileName = $_FILES['update_zip']['name'];
+                        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                        if ($ext !== 'zip') {
+                            echo json_encode(['status' => 'false', 'title' => 'Invalid Format', 'message' => 'Only valid .zip update archives are supported.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        $storage = __DIR__ . '/../../pp-media/storage/';
+                        $saveDir = $storage . 'updates/';
+                        @mkdir($saveDir, 0755, true);
+                        $saveTo = $saveDir . 'manual_update.zip';
+
+                        if (!move_uploaded_file($fileTmp, $saveTo)) {
+                            echo json_encode(['status' => 'false', 'title' => 'Upload Failed', 'message' => 'Could not save uploaded zip file to storage.', 'csrf_token' => $new_csrf_token]);
+                            exit();
+                        }
+
+                        $root = realpath(__DIR__ . '/../../');
+                        $backupDir = $storage . 'backup/';
+                        $tempDir   = $storage . "temp/manual_update/";
+
+                        try {
+                            $createBackup = get_env('system-settings-create_backup');
+                            if ($createBackup !== 'no') {
+                                @mkdir($backupDir, 0755, true);
+                                @zipFolder($root, "$backupDir/" . ($piprapay_current_version['version_code'] ?? 'backup') . "_" . date('Ymd_His') . ".zip");
+                                try {
+                                    @backupDatabasePDO("$backupDir/db_" . ($piprapay_current_version['version_code'] ?? 'backup') . "_" . date('Ymd_His') . ".sql");
+                                } catch (Throwable $e) {}
+                            }
+
+                            @file_put_contents("$root/.maintenance", 'updating');
+
+                            @mkdir($tempDir, 0755, true);
+                            extractUpdate($saveTo, $tempDir);
+                            copyFolder($tempDir, $root);
+
+                            if (file_exists("$tempDir/update.sql")) {
+                                try {
+                                    runSql("$tempDir/update.sql");
+                                } catch (Throwable $e) {}
+                            }
+
+                            deleteFolder($tempDir);
+                            @unlink($saveTo);
+                            @unlink("$root/.maintenance");
+
+                            set_env('last-update-version', '');
+                            set_env('last-update-version-name', '');
+                            set_env('last-update-download-url', '');
+                            set_env('last-update-release-notes', '');
+                            set_env('last-update-release-date', '');
+                            set_env('last-auto-update-check', getCurrentDatetime('Y-m-d H:i:s'));
+
+                            echo json_encode(['status' => 'true', 'title' => 'Update Applied', 'message' => 'Manual update archive has been extracted and installed successfully.', 'csrf_token' => $new_csrf_token]);
+                        } catch (Throwable $e) {
+                            @unlink("$root/.maintenance");
+                            echo json_encode(['status' => 'false', 'title' => 'Installation Failed', 'message' => $e->getMessage(), 'csrf_token' => $new_csrf_token]);
                         }
                     }
                 }else{
