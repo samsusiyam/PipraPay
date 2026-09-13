@@ -367,12 +367,15 @@
             </div>
 
             <!-- Pay Now Button if Unpaid -->
-            <?php if($data['invoice']['status'] !== "paid" && !empty($data['invoice']['checkout_url'])): ?>
+            <?php if($data['invoice']['status'] == "unpaid"): ?>
                 <div class="text-center mt-4">
-                    <a href="<?php echo $data['invoice']['checkout_url']; ?>" class="btn-pay-now">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
-                        <?php echo $data['lang']['pay_now']?>
-                    </a>
+                    <form action="" method="POST" id="form" enctype="multipart/form-data">
+                        <?php pp_renderFormFields('invoice', $data); ?>
+                        <button type="submit" id="payButton" class="btn-pay-now no-print">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                            <?php echo $data['lang']['pay_now']?>
+                        </button>
+                    </form>
                 </div>
             <?php endif; ?>
 
@@ -414,6 +417,52 @@
                 location.href = '?lang=' + language;
             }
         }
+
+        $(document).ready(function() {
+            $('#form').on('submit', function(e) {
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+                var payBtn = document.querySelector("#payButton");
+                if (payBtn) {
+                    payBtn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
+                }
+
+                $.ajax({
+                    url: '<?php echo pp_site_address(); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: formData,
+                    success: function(data) {
+                        if (payBtn) {
+                            payBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg> <?php echo $data['lang']['pay_now']?>';
+                        }
+
+                        if (data.status == "true") {
+                            location.href = data.redirect;
+                        } else {
+                            createToast({
+                                title: data.title || 'Error',
+                                description: data.message || 'Payment failed',
+                                svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                                timeout: 6000
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        if (payBtn) {
+                            payBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg> <?php echo $data['lang']['pay_now']?>';
+                        }
+                        createToast({
+                            title: 'Error',
+                            description: 'Something went wrong. Please try again.',
+                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
+                            timeout: 6000
+                        });
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

@@ -195,39 +195,14 @@
             </div>
 
             <div class="mp-body">
-                <div class="mp-product-header">
-                    <h2 class="mp-product-title"><?php echo htmlspecialchars($data['paymentLink']['product']['title']);?></h2>
-                    <p class="mp-product-desc"><?php echo htmlspecialchars($data['paymentLink']['product']['description']);?></p>
-                </div>
-
-                <form action="" method="POST" id="form">
-                    <input type="hidden" name="action" value="payment-link-process">
-                    <input type="hidden" name="payment_link_id" value="<?php echo htmlspecialchars($data['paymentLink']['ref']);?>">
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted"><?php echo $data['lang']['full_name']?> <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control" placeholder="e.g. John Doe" required>
+                <form action="" method="POST" id="form" enctype="multipart/form-data">
+                    <?php pp_renderFormFields('payment-link-default', $data); ?>
+                    <div class="mt-4">
+                        <button type="submit" id="payButton" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
+                            <?php echo $data['lang']['pay_now']?>
+                        </button>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted"><?php echo $data['lang']['email_address']?> <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted"><?php echo $data['lang']['mobile_number']?> <span class="text-danger">*</span></label>
-                        <input type="text" name="mobile" class="form-control" placeholder="017xxxxxxxx" required>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label small fw-bold text-muted"><?php echo $data['lang']['amount']?> (<?php echo $data['paymentLink']['currency'] ?? 'BDT'; ?>) <span class="text-danger">*</span></label>
-                        <input type="number" step="any" name="amount" class="form-control" value="<?php echo !empty($data['paymentLink']['amount']) && $data['paymentLink']['amount'] > 0 ? $data['paymentLink']['amount'] : ''; ?>" <?php echo !empty($data['paymentLink']['amount']) && $data['paymentLink']['amount'] > 0 ? 'readonly' : ''; ?> required>
-                    </div>
-
-                    <button type="submit" id="payButton" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg>
-                        <?php echo $data['lang']['pay_now']?>
-                    </button>
                 </form>
             </div>
         </div>
@@ -272,7 +247,7 @@
             $('#form').on('submit', function(e) {
                 e.preventDefault();
 
-                var formData = $(this).serialize();
+                var formData = new FormData(this);
                 var payBtn = document.querySelector("#payButton");
                 if (payBtn) {
                     payBtn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
@@ -283,6 +258,8 @@
                     type: 'POST',
                     dataType: 'json',
                     data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function(data) {
                         if (payBtn) {
                             payBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg> <?php echo $data['lang']['pay_now']?>';
@@ -292,8 +269,8 @@
                             location.href = data.redirect;
                         } else {
                             createToast({
-                                title: data.title,
-                                description: data.message,
+                                title: data.title || 'Error',
+                                description: data.message || 'Payment failed',
                                 svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
                                 timeout: 6000
                             });

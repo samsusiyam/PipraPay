@@ -262,7 +262,7 @@
             $('#form').on('submit', function(e) {
                 e.preventDefault();
 
-                var formData = $(this).serialize();
+                var formData = new FormData(this);
                 var payBtn = document.querySelector("#payButton");
                 if (payBtn) {
                     payBtn.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
@@ -273,6 +273,8 @@
                     type: 'POST',
                     dataType: 'json',
                     data: formData,
+                    processData: false,
+                    contentType: false,
                     success: function(data) {
                         if (payBtn) {
                             payBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3l0 -8" /><path d="M3 10l18 0" /><path d="M7 15l.01 0" /><path d="M11 15l2 0" /></svg> <?php echo $data['lang']['pay_now']?>';
@@ -282,8 +284,8 @@
                             location.href = data.redirect;
                         } else {
                             createToast({
-                                title: data.title,
-                                description: data.message,
+                                title: data.title || 'Error',
+                                description: data.message || 'Payment failed',
                                 svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 9v4" /><path d="M12 16v.01" /></svg>`,
                                 timeout: 6000
                             });
