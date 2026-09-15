@@ -583,6 +583,54 @@ if (is_dir($backup_dir)) {
     </div>
 </div>
 
+<!-- Modal 3: Delete Single Snapshot Confirmation Modal -->
+<div class="modal modal-blur fade" id="modal-deleteSingleBackup" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-status bg-danger"></div>
+            <div class="modal-body text-center py-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.871l-8.106 -13.534a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" /></svg>
+                <h3 class="fw-bold">Delete Snapshot?</h3>
+                <div class="text-muted">Are you sure you want to delete backup snapshot <code id="delete-single-backup-filename" class="fw-bold text-dark"></code>? This file cannot be recovered.</div>
+                <input type="hidden" id="delete-single-backup-file">
+                <input type="hidden" id="delete-single-backup-row">
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col"><button type="button" class="btn w-100 shadow-none" data-bs-dismiss="modal">Cancel</button></div>
+                        <div class="col"><button type="button" class="btn btn-danger w-100 shadow-none" id="btn-confirm-delete-single-backup">Yes, Delete</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Delete All Snapshots Confirmation Modal -->
+<div class="modal modal-blur fade" id="modal-deleteAllBackups" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-status bg-danger"></div>
+            <div class="modal-body text-center py-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                <h3 class="fw-bold">Delete ALL Snapshots?</h3>
+                <div class="text-muted">Are you sure you want to delete <strong>ALL</strong> safety backup snapshots? All stored file and database archives will be permanently removed.</div>
+            </div>
+            <div class="modal-footer">
+                <div class="w-100">
+                    <div class="row">
+                        <div class="col"><button type="button" class="btn w-100 shadow-none" data-bs-dismiss="modal">Cancel</button></div>
+                        <div class="col"><button type="button" class="btn btn-danger w-100 shadow-none" id="btn-confirm-delete-all-backups">Delete All</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script data-cfasync="false">
     // Helper function to animate progress bar
     function setUpdateProgress(pct, title, logMsg) {
@@ -949,18 +997,24 @@ if (is_dir($backup_dir)) {
         });
     });
 
-    // 7. Delete Single Backup Snapshot
+    // 7. Delete Single Backup Snapshot (Open Custom Modal)
     $(document).on('click', '.btn-delete-backup', function () {
         var fileName = $(this).data('file');
         var rowId = $(this).data('row');
 
-        if (!confirm('Are you sure you want to delete backup snapshot "' + fileName + '"? This cannot be undone.')) {
-            return;
-        }
+        $('#delete-single-backup-filename').text(fileName);
+        $('#delete-single-backup-file').val(fileName);
+        $('#delete-single-backup-row').val(rowId);
+        $('#modal-deleteSingleBackup').modal('show');
+    });
 
+    // Confirm Single Delete
+    $('#btn-confirm-delete-single-backup').click(function () {
+        var fileName = $('#delete-single-backup-file').val();
+        var rowId = $('#delete-single-backup-row').val();
         var csrf_token_default = $('input[name="csrf_token_default"]').val();
         var $btn = $(this);
-        $btn.prop('disabled', true);
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Deleting...');
 
         $.ajax({
             type: 'POST',
@@ -972,6 +1026,9 @@ if (is_dir($backup_dir)) {
             },
             dataType: 'json',
             success: function (response) {
+                $('#modal-deleteSingleBackup').modal('hide');
+                $btn.prop('disabled', false).text('Yes, Delete');
+
                 if (response.csrf_token) {
                     $('input[name="csrf_token"], input[name="csrf_token_default"]').val(response.csrf_token);
                 }
@@ -994,7 +1051,6 @@ if (is_dir($backup_dir)) {
                         top: 70
                     });
                 } else {
-                    $btn.prop('disabled', false);
                     createToast({
                         title: response.title || 'Delete Failed',
                         description: response.message,
@@ -1005,7 +1061,8 @@ if (is_dir($backup_dir)) {
                 }
             },
             error: function () {
-                $btn.prop('disabled', false);
+                $('#modal-deleteSingleBackup').modal('hide');
+                $btn.prop('disabled', false).text('Yes, Delete');
                 createToast({
                     title: 'Error',
                     description: 'Could not connect to server to delete snapshot.',
@@ -1017,15 +1074,16 @@ if (is_dir($backup_dir)) {
         });
     });
 
-    // 8. Delete All Backup Snapshots
+    // 8. Delete All Backup Snapshots (Open Custom Modal)
     $('.btn-delete-all-backups').click(function () {
-        if (!confirm('Are you sure you want to delete ALL safety backup snapshots? This action cannot be undone.')) {
-            return;
-        }
+        $('#modal-deleteAllBackups').modal('show');
+    });
 
+    // Confirm Delete All
+    $('#btn-confirm-delete-all-backups').click(function () {
         var csrf_token_default = $('input[name="csrf_token_default"]').val();
         var $btn = $(this);
-        $btn.prop('disabled', true).html('<div class="spinner-border spinner-border-sm me-1" role="status"></div> Deleting...');
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Deleting All...');
 
         $.ajax({
             type: 'POST',
@@ -1037,6 +1095,9 @@ if (is_dir($backup_dir)) {
             },
             dataType: 'json',
             success: function (response) {
+                $('#modal-deleteAllBackups').modal('hide');
+                $btn.prop('disabled', false).text('Delete All');
+
                 if (response.csrf_token) {
                     $('input[name="csrf_token"], input[name="csrf_token_default"]').val(response.csrf_token);
                 }
@@ -1052,7 +1113,6 @@ if (is_dir($backup_dir)) {
 
                     load_content('System Settings','<?php echo $site_url.$path_admin ?>/system-settings/update','nav-item-system-settings');
                 } else {
-                    $btn.prop('disabled', false).text('Delete All Snapshots');
                     createToast({
                         title: response.title || 'Failed',
                         description: response.message,
@@ -1063,7 +1123,8 @@ if (is_dir($backup_dir)) {
                 }
             },
             error: function () {
-                $btn.prop('disabled', false).text('Delete All Snapshots');
+                $('#modal-deleteAllBackups').modal('hide');
+                $btn.prop('disabled', false).text('Delete All');
                 createToast({
                     title: 'Error',
                     description: 'Could not connect to server to delete snapshots.',
