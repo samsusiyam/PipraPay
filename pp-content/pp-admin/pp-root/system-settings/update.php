@@ -75,7 +75,7 @@ if (is_dir($backup_dir)) {
                 <h2 class="page-title d-flex align-items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                     System Update & Maintenance
-                    <span class="badge bg-primary-lt ms-2"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.1'); ?></span>
+                    <span class="badge bg-primary-lt ms-2"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.7'); ?></span>
                 </h2>
             </div>
 
@@ -118,7 +118,7 @@ if (is_dir($backup_dir)) {
                             <div class="col">
                                 <div class="font-weight-medium">Installed Version</div>
                                 <div class="text-muted d-flex align-items-center gap-1">
-                                    <strong><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.1'); ?></strong>
+                                    <strong><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.7'); ?></strong>
                                     <span class="badge bg-blue-lt ms-1"><?php echo ucfirst($update_channel); ?></span>
                                 </div>
                             </div>
@@ -199,7 +199,7 @@ if (is_dir($backup_dir)) {
                 </div>
                 <h2 class="card-title h1 text-dark mb-2">System is Up to Date</h2>
                 <p class="text-muted max-w-md mx-auto mb-4" style="max-width: 550px;">
-                    You are running the latest version <strong class="text-primary"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.1'); ?></strong> on the <strong><?php echo ucfirst($update_channel); ?></strong> channel. All features, modules, security patches, and database structures are current.
+                    You are running the latest version <strong class="text-primary"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.7'); ?></strong> on the <strong><?php echo ucfirst($update_channel); ?></strong> channel. All features, modules, security patches, and database structures are current.
                 </p>
 
                 <div class="d-flex justify-content-center flex-wrap gap-4 text-muted small mb-4">
@@ -248,12 +248,12 @@ if (is_dir($backup_dir)) {
                             <?php endif; ?>
                         </div>
                         <h2 class="card-title h1 text-primary mb-1" id="update-target-title">
-                            Upgrade to <span id="lbl-target-version"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.2'); ?></span>
+                            Upgrade to <span id="lbl-target-version"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.7'); ?></span>
                         </h2>
                         <div class="text-muted d-flex align-items-center gap-2">
-                            <span>Current: <strong class="badge bg-secondary-lt"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.1'); ?></strong></span>
+                            <span>Current: <strong class="badge bg-secondary-lt"><?php echo htmlspecialchars($piprapay_current_version['version_name'] ?? 'v3.0.7'); ?></strong></span>
                             <span>➔</span>
-                            <span>Target: <strong class="badge bg-primary-lt" id="lbl-target-version-badge"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.2'); ?></strong></span>
+                            <span>Target: <strong class="badge bg-primary-lt" id="lbl-target-version-badge"><?php echo htmlspecialchars($lasted_update_version_name ?: 'v3.0.7'); ?></strong></span>
                         </div>
                     </div>
 
