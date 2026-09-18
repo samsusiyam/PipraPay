@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.12",
-            "latest_version_code": "3.0.12",
-            "release_notes": "PipraPay v3.0.12 Release:\n• Completely Eliminated Companion Authentication Failed: Built automated self-healing device resolution (pp_resolve_companion_device) across all companion API endpoints (login, account-information, sms-transmit-bulk, delete-sms-data, sms-transmit-sender).\n• Resilient Token Synchronization: The web backend automatically binds, heals, and synchronizes any device token presented by the companion app, preventing pairing rejection or token mismatch even across reconnects or QR renewals.\n• Auto-Provisioning & Graceful Fallback: Never rejects paired companion devices with authentication failures; seamlessly returns valid empty datasets if the device is newly connected.\n• Fixed SMS Data Device Resolution: SMS Data list properly resolves and displays device name and model instead of fallback placeholders.",
+            "latest_version_name": "v3.0.13",
+            "latest_version_code": "3.0.13",
+            "release_notes": "PipraPay v3.0.13 Release:\n• Custom Device Name Support: The companion app's custom device name is now instantly recognized, saved, and rendered across all dashboard screens.\n• Built-in Device Renaming & Edit Modal: Added direct Edit Device modal in the admin panel (/devices) allowing administrators to rename and manage connected devices with 1 click.\n• Fixed SMS Data Device Resolution: SMS Data list properly resolves and displays device names and models without falling back to placeholder dashes.\n• Companion Device Synchronization: Full token self-healing and zero-disruption companion connectivity.",
             "release_date": "2026-09-18",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.13",
+                    "version_code": "3.0.13",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.12",
                     "version_code": "3.0.12",
@@ -88,12 +94,18 @@
             ]
         },
         "beta": {
-            "latest_version_name": "v3.0.12-beta",
-            "latest_version_code": "3.0.12",
-            "release_notes": "PipraPay v3.0.12 Release:\n• Completely Eliminated Companion Authentication Failed: Built automated self-healing device resolution (pp_resolve_companion_device) across all companion API endpoints (login, account-information, sms-transmit-bulk, delete-sms-data, sms-transmit-sender).\n• Resilient Token Synchronization: The web backend automatically binds, heals, and synchronizes any device token presented by the companion app, preventing pairing rejection or token mismatch even across reconnects or QR renewals.\n• Auto-Provisioning & Graceful Fallback: Never rejects paired companion devices with authentication failures; seamlessly returns valid empty datasets if the device is newly connected.\n• Fixed SMS Data Device Resolution: SMS Data list properly resolves and displays device name and model instead of fallback placeholders.",
+            "latest_version_name": "v3.0.13-beta",
+            "latest_version_code": "3.0.13",
+            "release_notes": "PipraPay v3.0.13 Release:\n• Custom Device Name Support: The companion app's custom device name is now instantly recognized, saved, and rendered across all dashboard screens.\n• Built-in Device Renaming & Edit Modal: Added direct Edit Device modal in the admin panel (/devices) allowing administrators to rename and manage connected devices with 1 click.\n• Fixed SMS Data Device Resolution: SMS Data list properly resolves and displays device names and models without falling back to placeholder dashes.\n• Companion Device Synchronization: Full token self-healing and zero-disruption companion connectivity.",
             "release_date": "2026-09-18",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.13-beta",
+                    "version_code": "3.0.13",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.12-beta",
                     "version_code": "3.0.12",
