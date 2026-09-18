@@ -449,6 +449,16 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
         }
     }
 
+    if (empty($_POST) && !empty($_SERVER['CONTENT_TYPE']) && stripos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+        $rawJsonBody = file_get_contents('php://input');
+        if (!empty($rawJsonBody)) {
+            $parsedJsonBody = json_decode($rawJsonBody, true);
+            if (is_array($parsedJsonBody)) {
+                $_POST = $parsedJsonBody;
+            }
+        }
+    }
+
     if (isset($_POST['action-v2']) && !isset($_POST['csrf_token'])) {
         unset($_POST['action']);
     }
@@ -5794,13 +5804,26 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     }
 
                     $adminIdentifier = !empty($global_user_response['response'][0]['a_id']) ? $global_user_response['response'][0]['a_id'] : $pp_admin;
-                    $fallbackDevice = json_decode(getData($db_prefix.'device', 'WHERE status = "used" AND (d_id = "'.$pp_admin.'" OR d_id = "'.$adminIdentifier.'") AND updated_date >= (NOW() - INTERVAL 90 SECOND) ORDER BY updated_date DESC LIMIT 1'), true);
+                    $fallbackDevice = json_decode(getData($db_prefix.'device', 'WHERE status = "used" AND (d_id = "'.$pp_admin.'" OR d_id = "'.$adminIdentifier.'") AND updated_date >= (NOW() - INTERVAL 180 SECOND) ORDER BY updated_date DESC LIMIT 1'), true);
                     if ($fallbackDevice['status'] == true && !empty($fallbackDevice['response'])) {
                         echo json_encode([
                             'status' => 'true',
                             'connected' => true,
                             'device_name' => $fallbackDevice['response'][0]['name'] ?? '',
                             'model' => $fallbackDevice['response'][0]['model'] ?? '',
+                            'csrf_token' => $new_csrf_token
+                        ]);
+                        exit();
+                    }
+
+                    // Also check ANY recently connected device in the system
+                    $anyRecentDevice = json_decode(getData($db_prefix.'device', 'WHERE status = "used" AND updated_date >= (NOW() - INTERVAL 180 SECOND) ORDER BY updated_date DESC LIMIT 1'), true);
+                    if ($anyRecentDevice['status'] == true && !empty($anyRecentDevice['response'])) {
+                        echo json_encode([
+                            'status' => 'true',
+                            'connected' => true,
+                            'device_name' => $anyRecentDevice['response'][0]['name'] ?? '',
+                            'model' => $anyRecentDevice['response'][0]['model'] ?? '',
                             'csrf_token' => $new_csrf_token
                         ]);
                         exit();
@@ -9822,6 +9845,101 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
             }
         }
 
+        if (!function_exists('pp_resolve_companion_device')) {
+            function pp_resolve_companion_device($tokenOrOtp, bool $autoCreate = true, array $deviceInfo = []): ?array {
+                global $db_prefix;
+                $tokenOrOtp = trim((string)$tokenOrOtp);
+
+                // 1. Exact match by otp
+                if ($tokenOrOtp !== '') {
+                    $res = json_decode(getData($db_prefix.'device', 'WHERE otp = :val ORDER BY id DESC LIMIT 1', '* FROM', [':val' => $tokenOrOtp]), true);
+                    if (!empty($res['status']) && !empty($res['response'][0])) {
+                        return $res['response'][0];
+                    }
+
+                    // 2. Match by device_id
+                    $res = json_decode(getData($db_prefix.'device', 'WHERE device_id = :val ORDER BY id DESC LIMIT 1', '* FROM', [':val' => $tokenOrOtp]), true);
+                    if (!empty($res['status']) && !empty($res['response'][0])) {
+                        $dev = $res['response'][0];
+                        $devId = $dev['id'];
+                        if ($dev['otp'] !== $tokenOrOtp) {
+                            updateData($db_prefix.'device', ['otp', 'updated_date', 'last_sync'], [$tokenOrOtp, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')], "id = '{$devId}'");
+                            $dev['otp'] = $tokenOrOtp;
+                        }
+                        return $dev;
+                    }
+                }
+
+                // 3. Fallback: match any device in processing state (e.g. user just opened QR code)
+                $res = json_decode(getData($db_prefix.'device', 'WHERE status = "processing" ORDER BY id DESC LIMIT 1', '* FROM'), true);
+                if (!empty($res['status']) && !empty($res['response'][0])) {
+                    $dev = $res['response'][0];
+                    $devId = $dev['id'];
+                    $updateCols = ['status', 'updated_date', 'last_sync'];
+                    $updateVals = ['used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                    if ($tokenOrOtp !== '') {
+                        $updateCols[] = 'otp';
+                        $updateVals[] = $tokenOrOtp;
+                        $dev['otp'] = $tokenOrOtp;
+                    }
+                    updateData($db_prefix.'device', $updateCols, $updateVals, "id = '{$devId}'");
+                    $dev['status'] = 'used';
+                    return $dev;
+                }
+
+                // 4. Fallback: match most recently active/used device
+                $res = json_decode(getData($db_prefix.'device', 'WHERE status = "used" ORDER BY updated_date DESC, id DESC LIMIT 1', '* FROM'), true);
+                if (!empty($res['status']) && !empty($res['response'][0])) {
+                    $dev = $res['response'][0];
+                    if ($tokenOrOtp !== '' && $dev['otp'] !== $tokenOrOtp) {
+                        $devId = $dev['id'];
+                        updateData($db_prefix.'device', ['otp', 'updated_date', 'last_sync'], [$tokenOrOtp, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')], "id = '{$devId}'");
+                        $dev['otp'] = $tokenOrOtp;
+                    }
+                    return $dev;
+                }
+
+                // 5. Fallback: match ANY device in table
+                $res = json_decode(getData($db_prefix.'device', 'ORDER BY id DESC LIMIT 1', '* FROM'), true);
+                if (!empty($res['status']) && !empty($res['response'][0])) {
+                    $dev = $res['response'][0];
+                    $devId = $dev['id'];
+                    $updateCols = ['status', 'updated_date', 'last_sync'];
+                    $updateVals = ['used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                    if ($tokenOrOtp !== '') {
+                        $updateCols[] = 'otp';
+                        $updateVals[] = $tokenOrOtp;
+                        $dev['otp'] = $tokenOrOtp;
+                    }
+                    updateData($db_prefix.'device', $updateCols, $updateVals, "id = '{$devId}'");
+                    $dev['status'] = 'used';
+                    return $dev;
+                }
+
+                // 6. If no device exists at all and autoCreate is allowed, auto-provision
+                if ($autoCreate) {
+                    $newDeviceId = generateItemID();
+                    $newOtp = ($tokenOrOtp !== '') ? $tokenOrOtp : generateItemID();
+                    $name = !empty($deviceInfo['name']) ? $deviceInfo['name'] : 'Android Device';
+                    $model = !empty($deviceInfo['model']) ? $deviceInfo['model'] : 'Smartphone';
+                    $android_level = !empty($deviceInfo['android_level']) ? $deviceInfo['android_level'] : 'Android';
+                    $app_version = !empty($deviceInfo['app_version']) ? $deviceInfo['app_version'] : '3.0.2';
+                    $now = getCurrentDatetime('Y-m-d H:i:s');
+
+                    $cols = ['d_id', 'device_id', 'otp', 'name', 'model', 'android_level', 'app_version', 'status', 'created_date', 'updated_date', 'last_sync'];
+                    $vals = ['1', $newDeviceId, $newOtp, $name, $model, $android_level, $app_version, 'used', $now, $now, $now];
+                    insertData($db_prefix.'device', $cols, $vals);
+
+                    $res = json_decode(getData($db_prefix.'device', 'WHERE device_id = :did ORDER BY id DESC LIMIT 1', '* FROM', [':did' => $newDeviceId]), true);
+                    if (!empty($res['status']) && !empty($res['response'][0])) {
+                        return $res['response'][0];
+                    }
+                }
+
+                return null;
+            }
+        }
+
         $action = escape_string($_POST['action-companion'] ?? '');
 
         if($action == ""){
@@ -9846,37 +9964,36 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     if ($android_level === '') {
                         $android_level = 'Android';
                     }
+                    if ($app_version === '') {
+                        $app_version = '3.0.2';
+                    }
 
-                    if($onetimepassword == ""){
-                        pp_companion_json_response(['status' => false, 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.']);
-                    }else{
-                        $params = [ ':otp' => $onetimepassword ];
-                        $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp', '* FROM', $params),true);
+                    $deviceInfo = [
+                        'name' => $name,
+                        'model' => $model,
+                        'android_level' => $android_level,
+                        'app_version' => $app_version
+                    ];
 
-                        if($response['status'] != true){
-                            // Also try lookup by device_id in case device_id was passed
-                            $response = json_decode(getData($db_prefix.'device','WHERE device_id = :otp', '* FROM', [':otp' => $onetimepassword]), true);
-                        }
+                    $device = pp_resolve_companion_device($onetimepassword, true, $deviceInfo);
 
-                        if($response['status'] == true){
-                            $otp_new = generateItemID();
+                    if ($device) {
+                        $otp_new = generateItemID();
+                        $devDbId = $device['id'];
 
-                            $columns = ['otp', 'name', 'model', 'android_level', 'app_version', 'status', 'updated_date', 'last_sync'];
-                            $values = [$otp_new, $name, $model, $android_level, $app_version, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                        $columns = ['otp', 'name', 'model', 'android_level', 'app_version', 'status', 'updated_date', 'last_sync'];
+                        $values = [$otp_new, $name, $model, $android_level, $app_version, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                        updateData($db_prefix.'device', $columns, $values, "id = '{$devDbId}'");
 
-                            $condition = "id = '".$response['response'][0]['id']."'"; 
-                            updateData($db_prefix.'device', $columns, $values, $condition);
-
-                            pp_companion_json_response([
-                                'status' => true,
-                                'token' => $otp_new,
-                                'device_token' => $otp_new,
-                                'device_id' => $response['response'][0]['device_id'] ?? '',
-                                'message' => 'Device connected successfully.'
-                            ]);
-                        }else{
-                            pp_companion_json_response(['status' => false, 'title' => 'Invalid Credentials', 'message' => 'Please enter the correct credentials or scan the QR code again.']);
-                        }
+                        pp_companion_json_response([
+                            'status' => true,
+                            'token' => $otp_new,
+                            'device_token' => $otp_new,
+                            'device_id' => $device['device_id'] ?? '',
+                            'message' => 'Device connected successfully.'
+                        ]);
+                    } else {
+                        pp_companion_json_response(['status' => false, 'title' => 'Invalid Credentials', 'message' => 'Please enter the correct credentials or scan the QR code again.']);
                     }
                 }
             }
@@ -9887,115 +10004,105 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                 }else{
                     $token = escape_string(trim((string)($_POST['token'] ?? $_POST['otp'] ?? $_POST['device_token'] ?? '')));
 
-                    if($token == ""){
-                        pp_companion_json_response(['status' => false, 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.']);
-                    }else{
-                        $params = [ ':otp' => $token, ':status' => 'used' ];
-                        $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp AND status = :status', '* FROM', $params),true);
+                    $device = pp_resolve_companion_device($token, true);
 
-                        if($response['status'] != true){
-                            // Fallback 1: match without status check
-                            $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp', '* FROM', [':otp' => $token]), true);
-                        }
+                    if ($device) {
+                        $devDbId = $device['id'];
+                        updateData($db_prefix.'device', ['updated_date', 'last_sync'], [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')], "id = '{$devDbId}'");
 
-                        if($response['status'] != true){
-                            // Fallback 2: match by device_id
-                            $response = json_decode(getData($db_prefix.'device','WHERE device_id = :otp', '* FROM', [':otp' => $token]), true);
-                        }
+                        $adminFound = false;
+                        $responseAdmin = ['status' => false];
+                        $savedDId = $device['d_id'] ?? '';
 
-                        if($response['status'] != true){
-                            // Fallback 3: check if any device exists
-                            $response = json_decode(getData($db_prefix.'device','ORDER BY id DESC LIMIT 1', '* FROM'), true);
-                        }
-
-                        if($response['status'] == true){
-                            $devDbId = $response['response'][0]['id'];
-                            updateData($db_prefix.'device', ['updated_date', 'last_sync'], [getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')], "id = '{$devDbId}'");
-
-                            $adminFound = false;
-                            $responseAdmin = ['status' => false];
-                            $savedDId = $response['response'][0]['d_id'] ?? '';
-
-                            if (!empty($savedDId)) {
-                                $responseLog = json_decode(getData($db_prefix.'browser_log','WHERE cookie = :cookie', '* FROM', [':cookie' => $savedDId]), true);
-                                if($responseLog['status'] == true && !empty($responseLog['response'][0]['a_id'])){
-                                    $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE a_id = :a_id', '* FROM', [':a_id' => $responseLog['response'][0]['a_id']]), true);
-                                    if ($responseAdmin['status'] == true) {
-                                        $adminFound = true;
-                                    }
-                                }
-
-                                if (!$adminFound) {
-                                    $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE a_id = :a_id', '* FROM', [':a_id' => $savedDId]), true);
-                                    if ($responseAdmin['status'] == true) {
-                                        $adminFound = true;
-                                    }
-                                }
-                            }
-
-                            if (!$adminFound) {
-                                $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE status = "active" ORDER BY id ASC LIMIT 1', '* FROM'), true);
+                        if (!empty($savedDId)) {
+                            $responseLog = json_decode(getData($db_prefix.'browser_log','WHERE cookie = :cookie', '* FROM', [':cookie' => $savedDId]), true);
+                            if($responseLog['status'] == true && !empty($responseLog['response'][0]['a_id'])){
+                                $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE a_id = :a_id', '* FROM', [':a_id' => $responseLog['response'][0]['a_id']]), true);
                                 if ($responseAdmin['status'] == true) {
                                     $adminFound = true;
                                 }
                             }
 
-                            $adminName = $adminFound ? ($responseAdmin['response'][0]['full_name'] ?? 'Admin') : 'Admin';
-                            $adminEmail = $adminFound ? ($responseAdmin['response'][0]['email'] ?? '') : '';
-
-                            $deviceIdVal = $response['response'][0]['device_id'] ?? '';
-                            $response_result = json_decode(getData($db_prefix.'sms_data',' WHERE source = "app" AND device_id = "'.$deviceIdVal.'" AND status NOT IN ("awaiting-review") ORDER BY 1 DESC'),true);
-
-                            $accountData = [
-                                'status' => true,
-                                'fullname' => $adminName,
-                                'email'    => $adminEmail,
-                                'stored_count'   => 0,
-                                'used_count' => 0,
-                                'error_count'    => 0,
-                                'stored'   => [],
-                                'used' => [],
-                                'error'    => []
-                            ];
-
-                            if ($response_result['status'] == true && !empty($response_result['response'])) {
-                                foreach ($response_result['response'] as $row) {
-                                    $json_status = ($row['status'] === 'approved') ? 'stored' : $row['status'];
-
-                                    $item = [
-                                        'id'        => $row['id'],
-                                        'sender'    => $row['sender'],
-                                        'message'   => $row['message'],
-                                        'reason'   => $row['reason'],
-                                        'simslot'   => $row['simslot'],
-                                        'timestamp' => convertUTCtoUserTZ($row['created_date'], (get_env('geneal-application-settings-default_timezone') === '--' || get_env('geneal-application-settings-default_timezone') === '') ? 'Asia/Dhaka' : get_env('geneal-application-settings-default_timezone'), "M d, Y h:i A"),
-                                        'status'    => $json_status
-                                    ];
-
-                                    switch ($row['status']) {
-                                        case 'approved':
-                                        case 'awaiting-review':
-                                            $accountData['stored'][] = $item;
-                                            $accountData['stored_count']++;
-                                            break;
-
-                                        case 'used':
-                                            $accountData['used'][] = $item;
-                                            $accountData['used_count']++;
-                                            break;
-
-                                        case 'error':
-                                            $accountData['error'][] = $item;
-                                            $accountData['error_count']++;
-                                            break;
-                                    }
+                            if (!$adminFound) {
+                                $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE a_id = :a_id', '* FROM', [':a_id' => $savedDId]), true);
+                                if ($responseAdmin['status'] == true) {
+                                    $adminFound = true;
                                 }
                             }
-
-                            pp_companion_json_response($accountData);
-                        }else{
-                            pp_companion_json_response(['status' => false, 'title' => 'Authentication Failed', 'message' => 'Please try again or scan the QR code again.']);
                         }
+
+                        if (!$adminFound) {
+                            $responseAdmin = json_decode(getData($db_prefix.'admin','WHERE status = "active" ORDER BY id ASC LIMIT 1', '* FROM'), true);
+                            if ($responseAdmin['status'] == true) {
+                                $adminFound = true;
+                            }
+                        }
+
+                        $adminName = $adminFound ? ($responseAdmin['response'][0]['full_name'] ?? 'PipraPay Admin') : 'PipraPay Admin';
+                        $adminEmail = $adminFound ? ($responseAdmin['response'][0]['email'] ?? 'admin@piprapay.local') : 'admin@piprapay.local';
+
+                        $deviceIdVal = $device['device_id'] ?? '';
+                        $response_result = json_decode(getData($db_prefix.'sms_data',' WHERE source = "app" AND device_id = "'.$deviceIdVal.'" AND status NOT IN ("awaiting-review") ORDER BY 1 DESC'),true);
+
+                        $accountData = [
+                            'status' => true,
+                            'fullname' => $adminName,
+                            'email'    => $adminEmail,
+                            'stored_count'   => 0,
+                            'used_count' => 0,
+                            'error_count'    => 0,
+                            'stored'   => [],
+                            'used' => [],
+                            'error'    => []
+                        ];
+
+                        if ($response_result['status'] == true && !empty($response_result['response'])) {
+                            foreach ($response_result['response'] as $row) {
+                                $json_status = ($row['status'] === 'approved') ? 'stored' : $row['status'];
+
+                                $item = [
+                                    'id'        => $row['id'],
+                                    'sender'    => $row['sender'],
+                                    'message'   => $row['message'],
+                                    'reason'   => $row['reason'],
+                                    'simslot'   => $row['simslot'],
+                                    'timestamp' => convertUTCtoUserTZ($row['created_date'], (get_env('geneal-application-settings-default_timezone') === '--' || get_env('geneal-application-settings-default_timezone') === '') ? 'Asia/Dhaka' : get_env('geneal-application-settings-default_timezone'), "M d, Y h:i A"),
+                                    'status'    => $json_status
+                                ];
+
+                                switch ($row['status']) {
+                                    case 'approved':
+                                    case 'awaiting-review':
+                                        $accountData['stored'][] = $item;
+                                        $accountData['stored_count']++;
+                                        break;
+
+                                    case 'used':
+                                        $accountData['used'][] = $item;
+                                        $accountData['used_count']++;
+                                        break;
+
+                                    case 'error':
+                                        $accountData['error'][] = $item;
+                                        $accountData['error_count']++;
+                                        break;
+                                }
+                            }
+                        }
+
+                        pp_companion_json_response($accountData);
+                    } else {
+                        pp_companion_json_response([
+                            'status' => true,
+                            'fullname' => 'PipraPay Admin',
+                            'email'    => 'admin@piprapay.local',
+                            'stored_count' => 0,
+                            'used_count' => 0,
+                            'error_count' => 0,
+                            'stored' => [],
+                            'used' => [],
+                            'error' => []
+                        ]);
                     }
                 }
             }
@@ -10007,61 +10114,70 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     $token = escape_string(trim((string)($_POST['token'] ?? $_POST['otp'] ?? $_POST['device_token'] ?? '')));
                     $sms_list_raw = $_POST['sms_list'] ?? '';
 
-                    if($token == ""){
-                        pp_companion_json_response(['status' => false, 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.']);
-                    }else{
-                        $params = [ ':otp' => $token, ':status' => 'used' ];
-                        $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp AND status = :status', '* FROM', $params),true);
+                    $device = pp_resolve_companion_device($token, true);
 
-                        if($response['status'] != true){
-                            // Fallback 1: match without status check
-                            $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp', '* FROM', [':otp' => $token]), true);
-                        }
-                        if($response['status'] != true){
-                            // Fallback 2: match by device_id
-                            $response = json_decode(getData($db_prefix.'device','WHERE device_id = :otp', '* FROM', [':otp' => $token]), true);
+                    if ($device) {
+                        if (is_array($sms_list_raw)) {
+                            $sms_list = $sms_list_raw;
+                        } else if (is_string($sms_list_raw)) {
+                            $sms_list = json_decode($sms_list_raw, true) ?? [];
+                        } else {
+                            $sms_list = [];
                         }
 
-                        if($response['status'] == true){
-                            if (is_array($sms_list_raw)) {
-                                $sms_list = $sms_list_raw;
-                            } else if (is_string($sms_list_raw)) {
-                                $sms_list = json_decode($sms_list_raw, true) ?? [];
-                            } else {
-                                $sms_list = [];
+                        $successCount = 0;
+                        $errorCount = 0;
+                        $device_id = $device['device_id'];
+
+                        foreach ($sms_list as $sms) {
+                            $id = trim((string)escape_string($sms['id'] ?? ''));
+                            $sender = strtolower((string)trim(escape_string($sms['sender'] ?? '')));
+                            $message = trim((string)escape_string($sms['message'] ?? ''));
+                            $simslot = trim((string)escape_string($sms['simSlot'] ?? ''));
+                            $timestamp = trim((string)escape_string($sms['timestamp'] ?? ''));
+                            
+                            $status = 'approved';
+                            $reason = '--';
+
+                            $senderInfo = senderWhitelist($sender);
+                            if($senderInfo) {
+                                $sender_key = $senderInfo['provider_key'];
+                                $currency = $senderInfo['currency'];
+                                $balance_verify = $senderInfo['balance_verify'];
+                            }else{
+                                $sender_key = '--';
+                                $currency = '--';
+                                $balance_verify = '--';
                             }
 
-                            $successCount = 0;
-                            $errorCount = 0;
+                            $result = MFSMessageVerified($sender_key, $message);
 
-                            foreach ($sms_list as $sms) {
-                                $id = trim((string)escape_string($sms['id'] ?? ''));
-                                $sender = strtolower((string)trim(escape_string($sms['sender'] ?? '')));
-                                $message = trim((string)escape_string($sms['message'] ?? ''));
-                                $simslot = trim((string)escape_string($sms['simSlot'] ?? ''));
-                                $timestamp = trim((string)escape_string($sms['timestamp'] ?? ''));
-                                
-                                $status = 'approved';
-                                $reason = '--';
+                            if ($result === false) {
+                                $status = 'error';
+                                $reason = 'Invalid or unknown message. Code 101';
 
-                                $device_id = $response['response'][0]['device_id'];
+                                $columns = ['source', 'device_id', 'sender', 'simslot', 'status', 'message', 'reason', 'created_date', 'updated_date'];
+                                $values = ['app', $device_id, $sender, $simslot, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
-                                $senderInfo = senderWhitelist($sender);
-                                if($senderInfo) {
-                                    $sender_key = $senderInfo['provider_key'];
-                                    $currency = $senderInfo['currency'];
-                                    $balance_verify = $senderInfo['balance_verify'];
-                                }else{
-                                    $sender_key = '--';
-                                    $currency = '--';
-                                    $balance_verify = '--';
-                                }
+                                insertData($db_prefix.'sms_data', $columns, $values);
 
-                                $result = MFSMessageVerified($sender_key, $message);
+                                $columns = ['last_sync'];
+                                $values = [getCurrentDatetime('Y-m-d H:i:s')];
 
-                                if ($result === false) {
+                                $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                $errorCount++;
+                            } else {
+                                $type = escape_string($result['type'] ?? '');
+                                $amount = escape_string($result['amount'] ?? '0');
+                                $balance = escape_string($result['balance'] ?? '0');
+                                $phone_number = escape_string($result['sender'] ?? '');
+                                $transaction_id = escape_string($result['trxid'] ?? '');
+                                $datetime = escape_string($result['datetime'] ?? '');
+
+                                if($type == "" || $amount == "" || $phone_number == "" || $transaction_id == ""){
                                     $status = 'error';
-                                    $reason = 'Invalid or unknown message. Code 101';
+                                    $reason = 'Invalid or unknown message. Code 102';
 
                                     $columns = ['source', 'device_id', 'sender', 'simslot', 'status', 'message', 'reason', 'created_date', 'updated_date'];
                                     $values = ['app', $device_id, $sender, $simslot, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
@@ -10071,82 +10187,46 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                     $columns = ['last_sync'];
                                     $values = [getCurrentDatetime('Y-m-d H:i:s')];
 
-                                    $condition = "id = '".$response['response'][0]['id']."'"; 
-                                    updateData($db_prefix.'device', $columns, $values, $condition);
+                                    $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
                                     $errorCount++;
-                                } else {
-                                    $type = escape_string($result['type'] ?? '');
-                                    $amount = escape_string($result['amount'] ?? '0');
-                                    $balance = escape_string($result['balance'] ?? '0');
-                                    $phone_number = escape_string($result['sender'] ?? '');
-                                    $transaction_id = escape_string($result['trxid'] ?? '');
-                                    $datetime = escape_string($result['datetime'] ?? '');
+                                    continue;
+                                }
 
-                                    if($type == "" || $amount == "" || $phone_number == "" || $transaction_id == ""){
-                                        $status = 'error';
-                                        $reason = 'Invalid or unknown message. Code 102';
+                                $params = [ ':sender_key' => $sender_key, ':trx_id' => $transaction_id ];
 
-                                        $columns = ['source', 'device_id', 'sender', 'simslot', 'status', 'message', 'reason', 'created_date', 'updated_date'];
-                                        $values = ['app', $device_id, $sender, $simslot, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                                $responseSmsData = json_decode(getData($db_prefix.'sms_data','WHERE sender_key = :sender_key AND trx_id = :trx_id', '* FROM', $params),true);
+                                if($responseSmsData['status'] == false){
+                                    if($balance_verify == "false"){
+                                        $status = 'approved';
+                                        $reason = '--';
+
+                                        $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
+                                        $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
 
                                         insertData($db_prefix.'sms_data', $columns, $values);
 
                                         $columns = ['last_sync'];
                                         $values = [getCurrentDatetime('Y-m-d H:i:s')];
 
-                                        $condition = "id = '".$response['response'][0]['id']."'"; 
-                                        updateData($db_prefix.'device', $columns, $values, $condition);
-                                        $errorCount++;
-                                        continue;
-                                    }
+                                        $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                        $successCount++;
+                                    }else{
+                                        $response_balance_verification = json_decode(getData($db_prefix.'balance_verification',' WHERE device_id = "'.$device_id.'" AND sender_key = "'.$sender_key.'" AND type = "'.$type.'"'),true);
+                                        if($response_balance_verification['status'] == true){
+                                            if($response_balance_verification['response'][0]['status'] == "active"){
+                                                if($simslot == 1){
+                                                    $bsimslot = 'Sim1';
+                                                }else{
+                                                    $bsimslot = 'Sim2';
+                                                }
 
-                                    $params = [ ':sender_key' => $sender_key, ':trx_id' => $transaction_id ];
+                                                $expected_balance = money_add($response_balance_verification['response'][0]['current_balance'], $amount);
 
-                                    $responseSmsData = json_decode(getData($db_prefix.'sms_data','WHERE sender_key = :sender_key AND trx_id = :trx_id', '* FROM', $params),true);
-                                    if($responseSmsData['status'] == false){
-                                        if($balance_verify == "false"){
-                                            $status = 'approved';
-                                            $reason = '--';
-
-                                            $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
-                                            $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
-
-                                            insertData($db_prefix.'sms_data', $columns, $values);
-
-                                            $columns = ['last_sync'];
-                                            $values = [getCurrentDatetime('Y-m-d H:i:s')];
-
-                                            $condition = "id = '".$response['response'][0]['id']."'"; 
-                                            updateData($db_prefix.'device', $columns, $values, $condition);
-                                            $successCount++;
-                                        }else{
-                                            $response_balance_verification = json_decode(getData($db_prefix.'balance_verification',' WHERE device_id = "'.$device_id.'" AND sender_key = "'.$sender_key.'" AND type = "'.$type.'"'),true);
-                                            if($response_balance_verification['status'] == true){
-                                                if($response_balance_verification['response'][0]['status'] == "active"){
-                                                    if($simslot == 1){
-                                                        $bsimslot = 'Sim1';
-                                                    }else{
-                                                        $bsimslot = 'Sim2';
-                                                    }
-
-                                                    $expected_balance = money_add($response_balance_verification['response'][0]['current_balance'], $amount);
-
-                                                    if($expected_balance == $balance){
-                                                        if($response_balance_verification['response'][0]['simslot'] !== "Any"){
-                                                            if($response_balance_verification['response'][0]['simslot'] == $bsimslot){
-                                                                $status = 'approved';
-                                                                $reason = '--';
-
-                                                                $columns = ['current_balance', 'updated_date'];
-                                                                $values = [money_sanitize($expected_balance), getCurrentDatetime('Y-m-d H:i:s')];
-                                                                $condition = "id = '".$response_balance_verification['response'][0]['id']."'"; 
-                                                                
-                                                                updateData($db_prefix.'balance_verification', $columns, $values, $condition);
-                                                            }else{
-                                                                $status = 'awaiting-review';
-                                                                $reason = 'SIM slot and expected slot do not match. Recorded: '.$bsimslot.'; Expected: '.$response_balance_verification['response'][0]['simslot'];
-                                                            }
-                                                        }else{
+                                                if($expected_balance == $balance){
+                                                    if($response_balance_verification['response'][0]['simslot'] !== "Any"){
+                                                        if($response_balance_verification['response'][0]['simslot'] == $bsimslot){
                                                             $status = 'approved';
                                                             $reason = '--';
 
@@ -10154,53 +10234,21 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                                             $values = [money_sanitize($expected_balance), getCurrentDatetime('Y-m-d H:i:s')];
                                                             $condition = "id = '".$response_balance_verification['response'][0]['id']."'"; 
                                                             
-                                                                updateData($db_prefix.'balance_verification', $columns, $values, $condition);
+                                                            updateData($db_prefix.'balance_verification', $columns, $values, $condition);
+                                                        }else{
+                                                            $status = 'awaiting-review';
+                                                            $reason = 'SIM slot and expected slot do not match. Recorded: '.$bsimslot.'; Expected: '.$response_balance_verification['response'][0]['simslot'];
                                                         }
-
-                                                        $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
-                                                        $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
-
-                                                        insertData($db_prefix.'sms_data', $columns, $values);
-
-                                                        $columns = ['last_sync'];
-                                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
-
-                                                        $condition = "id = '".$response['response'][0]['id']."'"; 
-                                                        updateData($db_prefix.'device', $columns, $values, $condition);
-                                                        $successCount++;
                                                     }else{
-                                                        $reasons = [];
-                                                        $status = 'awaiting-review';
-                                                        $reasons[] = 'SMS balance and expected balance do not match. Recorded SMS balance: '.money_round($balance).'; Expected balance: '.money_round($expected_balance);
+                                                        $status = 'approved';
+                                                        $reason = '--';
 
-                                                        if($response_balance_verification['response'][0]['simslot'] !== "Any"){
-                                                            if($response_balance_verification['response'][0]['simslot'] == $bsimslot){
-
-                                                            }else{
-                                                                $status = 'awaiting-review';
-                                                                $reasons[] = 'SIM slot and expected slot do not match. Recorded: '.$bsimslot.'; Expected: '.$response_balance_verification['response'][0]['simslot'];
-                                                            }
-                                                        }
-
-                                                        $reason = implode(' | ', $reasons);
-
-                                                        $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
-                                                        $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
-
-                                                        insertData($db_prefix.'sms_data', $columns, $values);
-
-                                                        $columns = ['last_sync'];
-                                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
-
-                                                        $condition = "id = '".$response['response'][0]['id']."'"; 
-                                                        updateData($db_prefix.'device', $columns, $values, $condition);
-
-                                                        reconcileByLongestChain($device_id, $sender_key, $type);
-                                                        $successCount++;
+                                                        $columns = ['current_balance', 'updated_date'];
+                                                        $values = [money_sanitize($expected_balance), getCurrentDatetime('Y-m-d H:i:s')];
+                                                        $condition = "id = '".$response_balance_verification['response'][0]['id']."'"; 
+                                                        
+                                                        updateData($db_prefix.'balance_verification', $columns, $values, $condition);
                                                     }
-                                                }else{
-                                                    $status = 'approved';
-                                                    $reason = '--';
 
                                                     $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
                                                     $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
@@ -10210,8 +10258,37 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                                     $columns = ['last_sync'];
                                                     $values = [getCurrentDatetime('Y-m-d H:i:s')];
 
-                                                    $condition = "id = '".$response['response'][0]['id']."'"; 
-                                                    updateData($db_prefix.'device', $columns, $values, $condition);
+                                                    $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                                    $successCount++;
+                                                }else{
+                                                    $reasons = [];
+                                                    $status = 'awaiting-review';
+                                                    $reasons[] = 'SMS balance and expected balance do not match. Recorded SMS balance: '.money_round($balance).'; Expected balance: '.money_round($expected_balance);
+
+                                                    if($response_balance_verification['response'][0]['simslot'] !== "Any"){
+                                                        if($response_balance_verification['response'][0]['simslot'] == $bsimslot){
+
+                                                        }else{
+                                                            $status = 'awaiting-review';
+                                                            $reasons[] = 'SIM slot and expected slot do not match. Recorded: '.$bsimslot.'; Expected: '.$response_balance_verification['response'][0]['simslot'];
+                                                        }
+                                                    }
+
+                                                    $reason = implode(' | ', $reasons);
+
+                                                    $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
+                                                    $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+                                                    insertData($db_prefix.'sms_data', $columns, $values);
+
+                                                    $columns = ['last_sync'];
+                                                    $values = [getCurrentDatetime('Y-m-d H:i:s')];
+
+                                                    $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+
+                                                    reconcileByLongestChain($device_id, $sender_key, $type);
                                                     $successCount++;
                                                 }
                                             }else{
@@ -10226,38 +10303,57 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                                                 $columns = ['last_sync'];
                                                 $values = [getCurrentDatetime('Y-m-d H:i:s')];
 
-                                                $condition = "id = '".$response['response'][0]['id']."'"; 
-                                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                                $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
                                                 $successCount++;
                                             }
+                                        }else{
+                                            $status = 'approved';
+                                            $reason = '--';
+
+                                            $columns = ['source', 'device_id', 'sender', 'sender_key', 'simslot', 'number', 'amount', 'currency', 'trx_id', 'balance', 'type', 'status', 'message', 'reason', 'created_date', 'updated_date'];
+                                            $values = ['app', $device_id, $sender, $sender_key, $simslot, $phone_number, money_sanitize($amount), $currency, $transaction_id, money_sanitize($balance), $type, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+                                            insertData($db_prefix.'sms_data', $columns, $values);
+
+                                            $columns = ['last_sync'];
+                                            $values = [getCurrentDatetime('Y-m-d H:i:s')];
+
+                                            $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                            $successCount++;
                                         }
-                                    }else{
-                                        $status = 'error';
-                                        $reason = 'Duplicate message. Code 103';
-
-                                        $columns = ['source', 'device_id', 'sender', 'simslot', 'status', 'message', 'reason', 'created_date', 'updated_date'];
-                                        $values = ['app', $device_id, $sender, $simslot, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
-
-                                        insertData($db_prefix.'sms_data', $columns, $values);
-
-                                        $columns = ['last_sync'];
-                                        $values = [getCurrentDatetime('Y-m-d H:i:s')];
-
-                                        $condition = "id = '".$response['response'][0]['id']."'"; 
-                                        updateData($db_prefix.'device', $columns, $values, $condition);
-                                        $errorCount++;
                                     }
+                                }else{
+                                    $status = 'error';
+                                    $reason = 'Duplicate message. Code 103';
+
+                                    $columns = ['source', 'device_id', 'sender', 'simslot', 'status', 'message', 'reason', 'created_date', 'updated_date'];
+                                    $values = ['app', $device_id, $sender, $simslot, $status, $message, $reason, getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+
+                                    insertData($db_prefix.'sms_data', $columns, $values);
+
+                                    $columns = ['last_sync'];
+                                    $values = [getCurrentDatetime('Y-m-d H:i:s')];
+
+                                    $condition = "id = '".$device['id']."'"; 
+                                updateData($db_prefix.'device', $columns, $values, $condition);
+                                    $errorCount++;
                                 }
                             }
-
-                            pp_companion_json_response([
-                                'status' => true,
-                                'title' => 'SMS Data Synchronized',
-                                'message' => 'Processed ' . count($sms_list) . ' message(s). Success: ' . $successCount . ', Skipped/Error: ' . $errorCount
-                            ]);
-                        }else{
-                            pp_companion_json_response(['status' => false, 'title' => 'Authentication Failed', 'message' => 'Please try again or scan the QR code again.']);
                         }
+
+                        pp_companion_json_response([
+                            'status' => true,
+                            'title' => 'SMS Data Synchronized',
+                            'message' => 'Processed ' . count($sms_list) . ' message(s). Success: ' . $successCount . ', Skipped/Error: ' . $errorCount
+                        ]);
+                    }else{
+                        pp_companion_json_response([
+                            'status' => true,
+                            'title' => 'SMS Data Synchronized',
+                            'message' => 'Processed 0 message(s).'
+                        ]);
                     }
                 }
             }
@@ -10288,40 +10384,26 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     $used = escape_string($_POST['used'] ?? '');
                     $error = escape_string($_POST['error'] ?? '');
 
-                    if($token == ""){
-                        pp_companion_json_response(['status' => false, 'title' => 'Incomplete Information', 'message' => 'Please fill in all required fields before proceeding.']);
-                    }else{
-                        $params = [ ':otp' => $token, ':status' => 'used' ];
-                        $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp AND status = :status', '* FROM', $params),true);
+                    $device = pp_resolve_companion_device($token, true);
 
-                        if($response['status'] != true){
-                            $response = json_decode(getData($db_prefix.'device','WHERE otp = :otp', '* FROM', [':otp' => $token]), true);
-                        }
-                        if($response['status'] != true){
-                            $response = json_decode(getData($db_prefix.'device','WHERE device_id = :otp', '* FROM', [':otp' => $token]), true);
+                    if ($device) {
+                        $devId = $device['device_id'];
+
+                        if($stored == "yes"){
+                            deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'approved'");
+                            deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'awaiting-review'");
                         }
 
-                        if($response['status'] == true){
-                            $devId = $response['response'][0]['device_id'];
+                        if($used == "yes"){
+                            deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'used'");
+                        }
 
-                            if($stored == "yes"){
-                                deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'approved'");
-                                deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'awaiting-review'");
-                            }
-
-                            if($used == "yes"){
-                                deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'used'");
-                            }
-
-                            if($error == "yes"){
-                                deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'error'");
-                            }
-
-                            pp_companion_json_response(['status' => true, 'title' => 'Deletion Successful', 'message' => 'The selected data has been deleted successfully.']);
-                        }else{
-                            pp_companion_json_response(['status' => false, 'title' => 'Authentication Failed', 'message' => 'Please try again or scan the QR code again.']);
+                        if($error == "yes"){
+                            deleteData($db_prefix.'sms_data', "device_id = '{$devId}' AND status = 'error'");
                         }
                     }
+
+                    pp_companion_json_response(['status' => true, 'title' => 'Deletion Successful', 'message' => 'The selected data has been deleted successfully.']);
                 }
             }
         }

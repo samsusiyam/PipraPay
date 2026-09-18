@@ -138,8 +138,8 @@
                     insertData($db_prefix.'currency', $columns, $values);
 
                     set_env('system-settings-update_channel', 'stable');
-                    set_env('last-update-version', '3.0.11');
-                    set_env('last-update-version-name', 'v3.0.11');
+                    set_env('last-update-version', '3.0.12');
+                    set_env('last-update-version-name', 'v3.0.12');
                     set_env('last-auto-update-check', getCurrentDatetime('Y-m-d H:i:s'));
 
                     $tempFile  = __DIR__ . '/../../pp-temp-config.php';

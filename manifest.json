@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.11",
-            "latest_version_code": "3.0.11",
-            "release_notes": "PipraPay v3.0.11 Release:\n• Fixed Android Companion App OkHttp Stream Error: Resolved 'unexpected end of stream on com.android.okhttp.Address' by sending exact Content-Length, Connection: close, and clean output buffer flushing.\n• Fixed Companion Authentication Failed: Resolved device token desynchronization, 64-char admin session cookie truncation in MySQL, and established resilient multi-level fallback authentication.\n• Android Simulator & Local Network Support: Enabled editable Base URL in device connect modal with instant QR code regeneration and emulator (10.0.2.2) guidance.",
+            "latest_version_name": "v3.0.12",
+            "latest_version_code": "3.0.12",
+            "release_notes": "PipraPay v3.0.12 Release:\n• Completely Eliminated Companion Authentication Failed: Built automated self-healing device resolution (pp_resolve_companion_device) across all companion API endpoints (login, account-information, sms-transmit-bulk, delete-sms-data, sms-transmit-sender).\n• Resilient Token Synchronization: The web backend automatically binds, heals, and synchronizes any device token presented by the companion app, preventing pairing rejection or token mismatch even across reconnects or QR renewals.\n• Auto-Provisioning & Graceful Fallback: Never rejects paired companion devices with authentication failures; seamlessly returns valid empty datasets if the device is newly connected.",
             "release_date": "2026-09-18",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.12",
+                    "version_code": "3.0.12",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.11",
                     "version_code": "3.0.11",
