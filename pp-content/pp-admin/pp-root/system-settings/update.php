@@ -283,30 +283,30 @@ if (is_dir($backup_dir)) {
                 <div class="mb-4">
                     <h4 class="card-title mb-3">Update Progress Workflow</h4>
                     <div class="row g-2 text-center">
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-success-lt border-success-subtle" id="step-1-box">
-                                <div class="badge bg-success text-white mb-1" id="step-1-badge">✓ Step 1</div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 p-md-3 border rounded bg-success-lt border-success-subtle h-100 d-flex flex-column justify-content-center" id="step-1-box">
+                                <div><span class="badge bg-success text-white mb-1" id="step-1-badge">✓ Step 1</span></div>
                                 <div class="fw-semibold small">Version Detected</div>
                                 <div class="text-muted small">Update available</div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded bg-success-lt border-success-subtle" id="step-2-box">
-                                <div class="badge bg-success text-white mb-1" id="step-2-badge">✓ Step 2</div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 p-md-3 border rounded bg-success-lt border-success-subtle h-100 d-flex flex-column justify-content-center" id="step-2-box">
+                                <div><span class="badge bg-success text-white mb-1" id="step-2-badge">✓ Step 2</span></div>
                                 <div class="fw-semibold small">Review Changes</div>
                                 <div class="text-muted small">Changelog ready</div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded <?php echo $is_zip_downloaded ? 'bg-success-lt border-success-subtle' : 'bg-primary-lt border-primary-subtle'; ?>" id="step-3-box">
-                                <div class="badge <?php echo $is_zip_downloaded ? 'bg-success' : 'bg-primary'; ?> text-white mb-1" id="step-3-badge"><?php echo $is_zip_downloaded ? '✓ Step 3' : 'Step 3'; ?></div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 p-md-3 border rounded <?php echo $is_zip_downloaded ? 'bg-success-lt border-success-subtle' : 'bg-primary-lt border-primary-subtle'; ?> h-100 d-flex flex-column justify-content-center" id="step-3-box">
+                                <div><span class="badge <?php echo $is_zip_downloaded ? 'bg-success' : 'bg-primary'; ?> text-white mb-1" id="step-3-badge"><?php echo $is_zip_downloaded ? '✓ Step 3' : 'Step 3'; ?></span></div>
                                 <div class="fw-semibold small">Download Archive</div>
                                 <div class="text-muted small" id="step-3-status"><?php echo $is_zip_downloaded ? 'Package ready' : 'Pending download'; ?></div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="p-2 border rounded <?php echo $is_zip_downloaded ? 'bg-primary-lt border-primary-subtle' : 'bg-light'; ?>" id="step-4-box">
-                                <div class="badge <?php echo $is_zip_downloaded ? 'bg-primary' : 'bg-secondary'; ?> text-white mb-1" id="step-4-badge">Step 4</div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 p-md-3 border rounded <?php echo $is_zip_downloaded ? 'bg-primary-lt border-primary-subtle' : 'bg-light'; ?> h-100 d-flex flex-column justify-content-center" id="step-4-box">
+                                <div><span class="badge <?php echo $is_zip_downloaded ? 'bg-primary' : 'bg-secondary'; ?> text-white mb-1" id="step-4-badge">Step 4</span></div>
                                 <div class="fw-semibold small">Backup & Install</div>
                                 <div class="text-muted small" id="step-4-status"><?php echo $is_zip_downloaded ? 'Ready to install' : 'Awaiting download'; ?></div>
                             </div>
