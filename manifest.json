@@ -1,12 +1,18 @@
 {
     "channels": {
         "stable": {
-            "latest_version_name": "v3.0.9",
-            "latest_version_code": "3.0.9",
-            "release_notes": "PipraPay v3.0.9 Release:\n• Responsive Mobile Workflow: Fixed 4-step update progress workflow card grid and text layout on mobile devices.\n• CSRF Security & Session Hardening: Permanent fix for CSRF token desynchronization across all forms and AJAX requests.\n• Automatic Device Pairing Sync: Real-time QR/OTP connection status detection and instant dashboard auto-refresh on mobile device pairing.\n• Dynamic Base Path Resolution: Seamless directory detection across localhost subfolders and production domains.",
+            "latest_version_name": "v3.0.10",
+            "latest_version_code": "3.0.10",
+            "release_notes": "PipraPay v3.0.10 Release:\n• Fixed Modern Pay (Next-Gen) Theme: Resolved CSRF token rejection ('Request Failed: Invalid request token') on public custom payment links and invoices.\n• Full Android Companion App Pairing & Sync: Fixed device connection via QR code & OTP, resolved JSON request body parsing, prevented CSRF block on companion requests, and eliminated authentication failures.\n• Seamless Real-Time Device Sync: Immediate device detection, auto-refresh on dashboard, and robust SMS transmission data synchronization.",
             "release_date": "2026-09-18",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.10",
+                    "version_code": "3.0.10",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.9",
                     "version_code": "3.0.9",
@@ -70,12 +76,18 @@
             ]
         },
         "beta": {
-            "latest_version_name": "v3.0.9-beta",
-            "latest_version_code": "3.0.9",
-            "release_notes": "PipraPay v3.0.9 Release:\n• Responsive Mobile Workflow: Fixed 4-step update progress workflow card grid and text layout on mobile devices.\n• CSRF Security & Session Hardening: Permanent fix for CSRF token desynchronization across all forms and AJAX requests.\n• Automatic Device Pairing Sync: Real-time QR/OTP connection status detection and instant dashboard auto-refresh on mobile device pairing.\n• Dynamic Base Path Resolution: Seamless directory detection across localhost subfolders and production domains.",
+            "latest_version_name": "v3.0.10-beta",
+            "latest_version_code": "3.0.10",
+            "release_notes": "PipraPay v3.0.10 Release:\n• Fixed Modern Pay (Next-Gen) Theme: Resolved CSRF token rejection ('Request Failed: Invalid request token') on public custom payment links and invoices.\n• Full Android Companion App Pairing & Sync: Fixed device connection via QR code & OTP, resolved JSON request body parsing, prevented CSRF block on companion requests, and eliminated authentication failures.\n• Seamless Real-Time Device Sync: Immediate device detection, auto-refresh on dashboard, and robust SMS transmission data synchronization.",
             "release_date": "2026-09-18",
             "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip",
             "versions": [
+                {
+                    "version_name": "v3.0.10-beta",
+                    "version_code": "3.0.10",
+                    "checksum": "",
+                    "download_url": "https://github.com/samsusiyam/PipraPay/archive/refs/heads/main.zip"
+                },
                 {
                     "version_name": "v3.0.9-beta",
                     "version_code": "3.0.9",

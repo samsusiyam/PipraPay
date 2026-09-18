@@ -481,9 +481,6 @@
 
             <?php if($data['invoice']['status'] !== "paid"): ?>
                 <form action="" method="POST" id="form" enctype="multipart/form-data">
-                    <input type="hidden" name="action" value="invoice-process">
-                    <input type="hidden" name="ref" value="<?php echo htmlspecialchars($data['invoice']['id']);?>">
-
                     <?php pp_renderFormFields('invoice', $data); ?>
                     <div class="mt-4">
                         <button type="submit" id="payButton" class="btn btn-primary w-100 py-3 fw-bold">

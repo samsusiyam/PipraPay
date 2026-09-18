@@ -227,9 +227,6 @@
                     </div>
                 <?php else: ?>
                     <form action="" method="POST" id="form" enctype="multipart/form-data">
-                        <input type="hidden" name="action" value="payment-link-process">
-                        <input type="hidden" name="ref" value="<?php echo htmlspecialchars($data['paymentLink']['pid']);?>">
-
                         <?php pp_renderFormFields('payment-link', $data); ?>
                         <div class="mt-4">
                             <button type="submit" id="payButton" class="btn btn-primary">

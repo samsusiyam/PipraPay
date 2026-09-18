@@ -221,7 +221,7 @@
                     <label for="base-url" class="form-label">Base URL <span class="text-danger">*</span></label>
                     <div class="form-control-wrap">
                         <div class="input-group">
-                            <input type="text" class="form-control" id="base-url" name="base-url" placeholder="https://yourdomain.com" value="<?php echo $site_url ?>" readonly>
+                            <input type="text" class="form-control" id="base-url" name="base-url" placeholder="https://yourdomain.com" value="<?php echo rtrim($site_url, '/'); ?>" readonly>
 
                             <button class="btn border bg-light btn-color-dark btn-hover-primary btn-icon btn-soft" type="button" onclick="copyBaseUrl()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667l0 -8.666" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>
@@ -262,8 +262,8 @@
 
     function iniModelConnectDevice(){
         var model = document.querySelector("#modal-createItem");
-        var baseUrl = model.querySelector("#base-url").value;
-        var pass = model.querySelector("#one-time-password").value;
+        var baseUrl = (model.querySelector("#base-url").value || '').trim().replace(/\/+$/, '');
+        var pass = (model.querySelector("#one-time-password").value || '').trim();
 
         var text = baseUrl+'----'+pass;
 
@@ -376,7 +376,7 @@
 
     function copyBaseUrl(){
         var model = document.querySelector("#modal-createItem");
-        var baseUrl = model.querySelector("#base-url").value;
+        var baseUrl = (model.querySelector("#base-url").value || '').trim().replace(/\/+$/, '');
 
         copyContent(baseUrl, 'Copied!', 'Base url copied successfully.')
     }
@@ -568,7 +568,7 @@
     function load_data_list(page = 1){
         currentPage = page;
 
-        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var csrf_token_default = $('input[name="csrf_token_default"]').val() || $('input[name="csrf_token"]').first().val() || '';
         var search_input = $('.search_input').val();
         var show_limit = $('.show_limit').val();
 
@@ -611,14 +611,19 @@
                             redirectDelete = `onclick="deleteItem('${item.id}')"`;
                         }
 
+                        let dName = (item.name && item.name !== '--') ? item.name : 'Android Device';
+                        let dModel = (item.model && item.model !== '--') ? item.model : 'Smartphone';
+                        let dLevel = (item.android_level && item.android_level !== '--') ? item.android_level : 'Android';
+                        let dSync = (item.last_sync && item.last_sync !== '--') ? item.last_sync : '<span class="badge bg-secondary-lt">Not synced yet</span>';
+
                         html += `
                             <tr data-id="${item.id}">
                                 <td><input class="form-check-input m-0 align-middle table-selectable-check rowCheckbox" type="checkbox" aria-label="Select invoice"></td>
-                                <td ${redirectEdit}>${item.name}</td>
-                                <td ${redirectEdit}>${item.model}</td>
-                                <td ${redirectEdit}>${item.android_level}</td>
+                                <td ${redirectEdit}>${dName}</td>
+                                <td ${redirectEdit}>${dModel}</td>
+                                <td ${redirectEdit}>${dLevel}</td>
                                 <td ${redirectEdit}>${item.created_date}</td>
-                                <td ${redirectEdit}>${item.last_sync}</td>
+                                <td ${redirectEdit}>${dSync}</td>
                                 <td class="text-end">
                                     <span class="dropdown" style="position: unset;">
                                         <button class="btn dropdown-toggle align-text-top" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>

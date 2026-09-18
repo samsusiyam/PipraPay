@@ -633,9 +633,19 @@
     }
 
     function convertUTCtoUserTZ($utc_time, $user_tz = 'UTC', $format = 'Y-m-d H:i:s') {
-        $dt = new DateTime($utc_time, new DateTimeZone('UTC'));
-        $dt->setTimezone(new DateTimeZone($user_tz));
-        return $dt->format($format);
+        if (empty($utc_time) || $utc_time === '--') {
+            return '';
+        }
+        try {
+            if (empty($user_tz) || $user_tz === '--') {
+                $user_tz = 'Asia/Dhaka';
+            }
+            $dt = new DateTime((string)$utc_time, new DateTimeZone('UTC'));
+            $dt->setTimezone(new DateTimeZone((string)$user_tz));
+            return $dt->format($format);
+        } catch (Throwable $e) {
+            return (string)$utc_time;
+        }
     }
 
     function isExpired($expires_at){
