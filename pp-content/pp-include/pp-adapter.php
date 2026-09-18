@@ -5839,6 +5839,54 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                 }
             }
 
+            if($action == "device-edit-info"){
+                if($global_user_login == true){
+                    $device_id = escape_string($_POST['device_id'] ?? $_POST['ItemID'] ?? '');
+                    if($device_id !== ''){
+                        $res = json_decode(getData($db_prefix.'device', 'WHERE device_id = :did LIMIT 1', '* FROM', [':did' => $device_id]), true);
+                        if(!empty($res['status']) && !empty($res['response'][0])){
+                            $dev = $res['response'][0];
+                            echo json_encode([
+                                'status' => 'true',
+                                'device_id' => $dev['device_id'],
+                                'name' => $dev['name'],
+                                'model' => $dev['model'],
+                                'android_level' => $dev['android_level'],
+                                'csrf_token' => $new_csrf_token
+                            ]);
+                            exit();
+                        }
+                    }
+                    echo json_encode(['status' => 'false', 'title' => 'Device Not Found', 'message' => 'The selected device could not be found.', 'csrf_token' => $new_csrf_token]);
+                } else {
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request', 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
+            if($action == "device-edit"){
+                if($global_user_login == true){
+                    $device_id = escape_string($_POST['device_id'] ?? '');
+                    $name = escape_string(trim($_POST['name'] ?? ''));
+                    $model = escape_string(trim($_POST['model'] ?? ''));
+
+                    if($device_id !== '' && $name !== ''){
+                        $updateCols = ['name', 'updated_date'];
+                        $updateVals = [$name, getCurrentDatetime('Y-m-d H:i:s')];
+                        if ($model !== '') {
+                            $updateCols[] = 'model';
+                            $updateVals[] = $model;
+                        }
+                        updateData($db_prefix.'device', $updateCols, $updateVals, "device_id = '{$device_id}'");
+
+                        echo json_encode(['status' => 'true', 'title' => 'Device Updated', 'message' => 'Device details updated successfully.', 'csrf_token' => $new_csrf_token]);
+                    } else {
+                        echo json_encode(['status' => 'false', 'title' => 'Validation Error', 'message' => 'Device name is required.', 'csrf_token' => $new_csrf_token]);
+                    }
+                } else {
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request', 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
             if($action == "balance-verification-list"){
                 if($global_user_login == true){
                     if (!canAccessPage(json_decode($global_response_permission['response'][0]['permission'], true), 'device', $global_user_response['response'][0]['role'])) {
@@ -9969,23 +10017,10 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                     pp_companion_json_response(['status' => false, 'title' => 'Demo Restriction', 'message' => 'This feature is disabled in the demo version.']);
                 }else{
                     $onetimepassword = escape_string(trim((string)($_POST['onetimepassword'] ?? $_POST['otp'] ?? $_POST['pass'] ?? '')));
-                    $name = escape_string(trim((string)($_POST['name'] ?? $_POST['device_name'] ?? '')));
+                    $name = escape_string(trim((string)($_POST['name'] ?? $_POST['deviceName'] ?? $_POST['device_name'] ?? $_POST['device'] ?? '')));
                     $model = escape_string(trim((string)($_POST['model'] ?? '')));
                     $android_level = escape_string(trim((string)($_POST['android_level'] ?? $_POST['android_version'] ?? '')));
                     $app_version = escape_string(trim((string)($_POST['app_version'] ?? '')));
-
-                    if ($name === '') {
-                        $name = !empty($model) ? $model : 'Android Device';
-                    }
-                    if ($model === '') {
-                        $model = 'Smartphone';
-                    }
-                    if ($android_level === '') {
-                        $android_level = 'Android';
-                    }
-                    if ($app_version === '') {
-                        $app_version = '3.0.2';
-                    }
 
                     $deviceInfo = [
                         'name' => $name,
@@ -10001,21 +10036,30 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $devDbId = $device['id'];
 
                         $existingName = trim((string)($device['name'] ?? ''));
-                        if (!empty($existingName) && $existingName !== '--' && $existingName !== 'Android Device' && ($name === 'Android Device' || $name === 'Smartphone' || $name === '')) {
-                            $nameToSave = $existingName;
-                        } else {
+                        if ($name !== '') {
                             $nameToSave = $name;
+                        } elseif (!empty($existingName) && $existingName !== '--') {
+                            $nameToSave = $existingName;
+                        } elseif (!empty($model)) {
+                            $nameToSave = $model;
+                        } else {
+                            $nameToSave = 'Android Device';
                         }
 
                         $existingModel = trim((string)($device['model'] ?? ''));
-                        if (!empty($existingModel) && $existingModel !== '--' && $existingModel !== 'Smartphone' && ($model === 'Smartphone' || $model === '')) {
+                        if ($model !== '') {
+                            $modelToSave = $model;
+                        } elseif (!empty($existingModel) && $existingModel !== '--') {
                             $modelToSave = $existingModel;
                         } else {
-                            $modelToSave = $model;
+                            $modelToSave = 'Smartphone';
                         }
 
+                        $levelToSave = ($android_level !== '') ? $android_level : ((!empty($device['android_level']) && $device['android_level'] !== '--') ? $device['android_level'] : 'Android');
+                        $versionToSave = ($app_version !== '') ? $app_version : ((!empty($device['app_version']) && $device['app_version'] !== '--') ? $device['app_version'] : '3.0.2');
+
                         $columns = ['otp', 'name', 'model', 'android_level', 'app_version', 'status', 'updated_date', 'last_sync'];
-                        $values = [$otp_new, $nameToSave, $modelToSave, $android_level, $app_version, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                        $values = [$otp_new, $nameToSave, $modelToSave, $levelToSave, $versionToSave, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
                         updateData($db_prefix.'device', $columns, $values, "id = '{$devDbId}'");
 
                         pp_companion_json_response([

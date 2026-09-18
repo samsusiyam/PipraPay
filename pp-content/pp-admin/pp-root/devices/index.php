@@ -252,6 +252,33 @@
         </div>
     </div>
 </div>
+
+<div class="modal modal-blur fade" id="modal-editItem" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Device</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit-device-id" name="device_id">
+            <div class="form-group mb-3">
+                <label class="form-label">Device Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="edit-device-name" placeholder="e.g. Bkash SIM 1 / My Phone">
+                <small class="form-hint">Give this device an easily recognizable custom name.</small>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">Device Model</label>
+                <input type="text" class="form-control" id="edit-device-model" placeholder="e.g. Samsung Galaxy S21">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <a href="javascript:void(0)" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</a>
+            <button type="button" class="btn btn-primary" onclick="saveDeviceEdit()">Save Changes</button>
+          </div>
+        </div>
+    </div>
+</div>
 <!--extra requirement-->
 <!--extra requirement-->
 <!--extra requirement-->
@@ -598,11 +625,16 @@
 
                 if (res.status === 'true') {
                     res.response.forEach(item => {
+                        let allowEdit = <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'device', 'edit', $global_user_response['response'][0]['role']) ? 'true' : 'false' ?>;
                         let allowBalanceVerification = <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'device', 'balance_verification_for', $global_user_response['response'][0]['role']) ? 'true' : 'false' ?>;
                         let allowDelete = <?= hasPermission(json_decode($global_response_permission['response'][0]['permission'], true), 'device', 'delete', $global_user_response['response'][0]['role']) ? 'true' : 'false' ?>;
                         let redirectEdit = '';
                         let redirectDelete = '';
                         let redirectBalanceVerification = '';
+
+                        if (allowEdit) {
+                            redirectEdit = `style="cursor:pointer;" onclick="openEditModel('${item.id}')" title="Click to edit name"`;
+                        }
 
                         if (allowBalanceVerification) {
                             redirectBalanceVerification = `onclick="load_content('Balance Verification','<?php echo $site_url.$path_admin ?>/devices/balance-verification?d_id=${item.id}','nav-item-devices')"`;
@@ -620,7 +652,7 @@
                         html += `
                             <tr data-id="${item.id}">
                                 <td><input class="form-check-input m-0 align-middle table-selectable-check rowCheckbox" type="checkbox" aria-label="Select invoice"></td>
-                                <td ${redirectEdit}>${dName}</td>
+                                <td ${redirectEdit}><strong>${dName}</strong></td>
                                 <td ${redirectEdit}>${dModel}</td>
                                 <td ${redirectEdit}>${dLevel}</td>
                                 <td ${redirectEdit}>${item.created_date}</td>
@@ -629,6 +661,7 @@
                                     <span class="dropdown" style="position: unset;">
                                         <button class="btn dropdown-toggle align-text-top" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
                                         <div class="dropdown-menu dropdown-menu-end" style="">
+                                            <a class="dropdown-item ${allowEdit ? '' : 'd-none'}" href="javascript:void(0)" onclick="openEditModel('${item.id}')"> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg> Edit Device </a>
                                             <a class="dropdown-item ${allowBalanceVerification ? '' : 'd-none'}" href="javascript:void(0)" ${redirectBalanceVerification}> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rosette-discount-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 7.2a2.2 2.2 0 0 1 2.2 -2.2h1a2.2 2.2 0 0 0 1.55 -.64l.7 -.7a2.2 2.2 0 0 1 3.12 0l.7 .7c.412 .41 .97 .64 1.55 .64h1a2.2 2.2 0 0 1 2.2 2.2v1c0 .58 .23 1.138 .64 1.55l.7 .7a2.2 2.2 0 0 1 0 3.12l-.7 .7a2.2 2.2 0 0 0 -.64 1.55v1a2.2 2.2 0 0 1 -2.2 2.2h-1a2.2 2.2 0 0 0 -1.55 .64l-.7 .7a2.2 2.2 0 0 1 -3.12 0l-.7 -.7a2.2 2.2 0 0 0 -1.55 -.64h-1a2.2 2.2 0 0 1 -2.2 -2.2v-1a2.2 2.2 0 0 0 -.64 -1.55l-.7 -.7a2.2 2.2 0 0 1 0 -3.12l.7 -.7a2.2 2.2 0 0 0 .64 -1.55v-1" /><path d="M9 12l2 2l4 -4" /></svg> Balance Verification </a>
                                             <a class="dropdown-item btnDeleteItem-${item.id} ${allowDelete ? '' : 'd-none'}" href="javascript:void(0)" ${redirectDelete}> <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete </a>
                                         </div>
@@ -696,4 +729,60 @@
             load_data_list(1);
         });
     });
+
+    function openEditModel(deviceId){
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        $.ajax({
+            type: 'POST',
+            url: '<?php echo $site_url.$path_admin ?>/dashboard',
+            data: {action: "device-edit-info", csrf_token: csrf_token_default, device_id: deviceId},
+            dataType: 'json',
+            success: function(res){
+                if(res.csrf_token){
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(input => { input.value = res.csrf_token; });
+                    document.querySelectorAll('input[name="csrf_token_default"]').forEach(input => { input.value = res.csrf_token; });
+                }
+                if(res.status === 'true'){
+                    $('#edit-device-id').val(res.device_id);
+                    $('#edit-device-name').val((res.name && res.name !== '--') ? res.name : '');
+                    $('#edit-device-model').val((res.model && res.model !== '--') ? res.model : '');
+                    $('#modal-editItem').modal('show');
+                } else {
+                    createToast({ title: res.title, description: res.message, timeout: 4000, top: 70 });
+                }
+            }
+        });
+    }
+
+    function saveDeviceEdit(){
+        var csrf_token_default = $('input[name="csrf_token_default"]').val();
+        var deviceId = $('#edit-device-id').val();
+        var name = $('#edit-device-name').val().trim();
+        var model = $('#edit-device-model').val().trim();
+
+        if(!name){
+            createToast({ title: 'Validation Error', description: 'Device Name is required.', timeout: 4000, top: 70 });
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            url: '<?php echo $site_url.$path_admin ?>/dashboard',
+            data: {action: "device-edit", csrf_token: csrf_token_default, device_id: deviceId, name: name, model: model},
+            dataType: 'json',
+            success: function(res){
+                if(res.csrf_token){
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(input => { input.value = res.csrf_token; });
+                    document.querySelectorAll('input[name="csrf_token_default"]').forEach(input => { input.value = res.csrf_token; });
+                }
+                if(res.status === 'true'){
+                    $('#modal-editItem').modal('hide');
+                    createToast({ title: res.title, description: res.message, timeout: 4000, top: 70 });
+                    load_data_list(currentPage || 1);
+                } else {
+                    createToast({ title: res.title, description: res.message, timeout: 4000, top: 70 });
+                }
+            }
+        });
+    }
 </script>
