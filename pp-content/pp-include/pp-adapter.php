@@ -238,8 +238,8 @@
     $pp_adapter_loaded = true;
 
     $piprapay_current_version = [
-        'version_name' => 'v3.0.11',
-        'version_code' => '3.0.11',
+        'version_name' => 'v3.0.12',
+        'version_code' => '3.0.12',
         'version_hash' => '6b6f7c62e34e3680398387720dbd44a036d1a574860d5f90a3bd5d9b6280bea1
 c9515853f1fbf61175dd3dbce6eb011e4cf29fc43949ed4b562f6421b88c8773
 c0dc07a71b29a9da279310f2247affb16089334cc3da60fa0b4b4f06f78594cb
@@ -5611,11 +5611,15 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $response = [];
 
                         foreach($response_result['response'] as $row){
+                            $devName = (!empty($row['name']) && $row['name'] !== '--') ? $row['name'] : ((!empty($row['model']) && $row['model'] !== '--') ? $row['model'] : 'Android Device');
+                            $devModel = (!empty($row['model']) && $row['model'] !== '--') ? $row['model'] : 'Smartphone';
+                            $devAndroid = (!empty($row['android_level']) && $row['android_level'] !== '--') ? $row['android_level'] : 'Android';
+
                             $response[] = [
                                 "id"   => $row['device_id'],
-                                "name"   => $row['name'],
-                                "model"   => $row['model'],
-                                "android_level"   => $row['android_level'],
+                                "name"   => $devName,
+                                "model"   => $devModel,
+                                "android_level"   => $devAndroid,
                                 "status"   => $row['status'],
                                 "created_date"     => convertUTCtoUserTZ($row['created_date'], ($global_response_brand['response'][0]['timezone'] === '--' || $global_response_brand['response'][0]['timezone'] === '') ? 'Asia/Dhaka' : $global_response_brand['response'][0]['timezone'], "M d, Y h:i A"),
                                 "updated_date"     => convertUTCtoUserTZ($row['updated_date'], ($global_response_brand['response'][0]['timezone'] === '--' || $global_response_brand['response'][0]['timezone'] === '') ? 'Asia/Dhaka' : $global_response_brand['response'][0]['timezone'], "M d, Y h:i A"),
@@ -6287,10 +6291,25 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $response = [];
 
                         foreach($response_result['response'] as $row){
-                            $device_name = '';
-                            $response_device = json_decode(getData($db_prefix.'device',' WHERE device_id = "'.$row['device_id'].'"'),true);
-                            if($response_device['status'] == true){
-                                $device_name = $response_device['response'][0]['name'];
+                            $device_name = '--';
+                            if (!empty($row['device_id']) && $row['device_id'] !== '--' && $row['device_id'] !== '00') {
+                                $response_device = json_decode(getData($db_prefix.'device',' WHERE device_id = "'.$row['device_id'].'"'),true);
+                                if($response_device['status'] == true && !empty($response_device['response'][0]['name']) && $response_device['response'][0]['name'] !== '--'){
+                                    $device_name = $response_device['response'][0]['name'];
+                                } elseif($response_device['status'] == true && !empty($response_device['response'][0]['model']) && $response_device['response'][0]['model'] !== '--'){
+                                    $device_name = $response_device['response'][0]['model'];
+                                }
+                            }
+
+                            if ($device_name === '--' || $device_name === '') {
+                                $latestDev = json_decode(getData($db_prefix.'device', 'WHERE status = "used" ORDER BY updated_date DESC, id DESC LIMIT 1'), true);
+                                if (!empty($latestDev['status']) && !empty($latestDev['response'][0]['name']) && $latestDev['response'][0]['name'] !== '--') {
+                                    $device_name = $latestDev['response'][0]['name'];
+                                } elseif (!empty($latestDev['status']) && !empty($latestDev['response'][0]['model']) && $latestDev['response'][0]['model'] !== '--') {
+                                    $device_name = $latestDev['response'][0]['model'];
+                                } else {
+                                    $device_name = 'Companion Device';
+                                }
                             }
 
                             $provider = senderWhitelist(null, $row['sender_key']);
@@ -9981,8 +10000,22 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                         $otp_new = generateItemID();
                         $devDbId = $device['id'];
 
+                        $existingName = trim((string)($device['name'] ?? ''));
+                        if (!empty($existingName) && $existingName !== '--' && $existingName !== 'Android Device' && ($name === 'Android Device' || $name === 'Smartphone' || $name === '')) {
+                            $nameToSave = $existingName;
+                        } else {
+                            $nameToSave = $name;
+                        }
+
+                        $existingModel = trim((string)($device['model'] ?? ''));
+                        if (!empty($existingModel) && $existingModel !== '--' && $existingModel !== 'Smartphone' && ($model === 'Smartphone' || $model === '')) {
+                            $modelToSave = $existingModel;
+                        } else {
+                            $modelToSave = $model;
+                        }
+
                         $columns = ['otp', 'name', 'model', 'android_level', 'app_version', 'status', 'updated_date', 'last_sync'];
-                        $values = [$otp_new, $name, $model, $android_level, $app_version, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
+                        $values = [$otp_new, $nameToSave, $modelToSave, $android_level, $app_version, 'used', getCurrentDatetime('Y-m-d H:i:s'), getCurrentDatetime('Y-m-d H:i:s')];
                         updateData($db_prefix.'device', $columns, $values, "id = '{$devDbId}'");
 
                         pp_companion_json_response([
