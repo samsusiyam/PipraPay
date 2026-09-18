@@ -257,6 +257,9 @@
 
 
 <script data-cfasync="false">
+    var deviceConnectInterval = null;
+    var currentConnectDeviceId = '';
+
     function iniModelConnectDevice(){
         var model = document.querySelector("#modal-createItem");
         var baseUrl = model.querySelector("#base-url").value;
@@ -273,6 +276,11 @@
     }
 
     function iniConnectDeviceInfo(){
+        if (deviceConnectInterval) {
+            clearInterval(deviceConnectInterval);
+            deviceConnectInterval = null;
+        }
+
         var csrf_token_default = $('input[name="csrf_token_default"]').val();
 
         // Get modal element
@@ -296,11 +304,46 @@
                 });
 
                 if (response.status === 'true') {
+                    currentConnectDeviceId = response.device_id || '';
                     model.querySelector("#one-time-password").value = response.otp;
 
                     model.querySelector('.loading-process').innerHTML = '<div id="qrcode"></div>';
 
                     iniModelConnectDevice();
+
+                    if (currentConnectDeviceId) {
+                        deviceConnectInterval = setInterval(function () {
+                            var csrf = $('input[name="csrf_token_default"]').val();
+                            $.ajax({
+                                type: 'POST',
+                                url: '<?php echo $site_url.$path_admin ?>/dashboard',
+                                data: {action: "device-connect-status", csrf_token: csrf, device_id: currentConnectDeviceId},
+                                dataType: 'json',
+                                success: function (chkRes) {
+                                    if (chkRes.csrf_token) {
+                                        document.querySelectorAll('input[name="csrf_token"], input[name="csrf_token_default"]').forEach(input => {
+                                            input.value = chkRes.csrf_token;
+                                        });
+                                    }
+                                    if (chkRes.connected === true) {
+                                        if (deviceConnectInterval) {
+                                            clearInterval(deviceConnectInterval);
+                                            deviceConnectInterval = null;
+                                        }
+                                        closeAllBootstrapModals();
+                                        createToast({
+                                            title: 'Device Connected!',
+                                            description: (chkRes.device_name ? chkRes.device_name + ' has been connected successfully.' : 'Your device has been connected successfully.'),
+                                            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5f38f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>`,
+                                            timeout: 6000,
+                                            top: 70
+                                        });
+                                        load_data_list(1);
+                                    }
+                                }
+                            });
+                        }, 2500);
+                    }
                 } else {
                     createToast({
                         title: response.title,
@@ -322,6 +365,14 @@
             }
         });
     }
+
+    $('#modal-createItem').on('hidden.bs.modal', function () {
+        if (deviceConnectInterval) {
+            clearInterval(deviceConnectInterval);
+            deviceConnectInterval = null;
+        }
+        load_data_list(1);
+    });
 
     function copyBaseUrl(){
         var model = document.querySelector("#modal-createItem");

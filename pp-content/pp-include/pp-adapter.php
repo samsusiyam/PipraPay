@@ -226,8 +226,8 @@
     $pp_adapter_loaded = true;
 
     $piprapay_current_version = [
-        'version_name' => 'v3.0.7',
-        'version_code' => '3.0.7',
+        'version_name' => 'v3.0.8',
+        'version_code' => '3.0.8',
         'version_hash' => '6b6f7c62e34e3680398387720dbd44a036d1a574860d5f90a3bd5d9b6280bea1
 c9515853f1fbf61175dd3dbce6eb011e4cf29fc43949ed4b562f6421b88c8773
 c0dc07a71b29a9da279310f2247affb16089334cc3da60fa0b4b4f06f78594cb
@@ -5717,13 +5717,14 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                     $response_brand = json_decode(getData($db_prefix.'device','WHERE status = "processing" AND d_id = "'.$pp_admin.'"'),true);
                     if($response_brand['status'] == true){
+                        $device_id = $response_brand['response'][0]['device_id'];
                         $columns = ['otp', 'updated_date'];
                         $values = [$otp, getCurrentDatetime('Y-m-d H:i:s')];
                         $condition = "id = '".$response_brand['response'][0]['id']."'"; 
                         
                         updateData($db_prefix.'device', $columns, $values, $condition);
 
-                        echo json_encode(['status' => 'true', 'otp' => $otp, 'csrf_token' => $new_csrf_token]);
+                        echo json_encode(['status' => 'true', 'otp' => $otp, 'device_id' => $device_id, 'csrf_token' => $new_csrf_token]);
                     }else{
                         $device_id = generateItemID();
 
@@ -5732,8 +5733,31 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
                         insertData($db_prefix.'device', $columns, $values);
 
-                        echo json_encode(['status' => 'true', 'otp' => $otp, 'csrf_token' => $new_csrf_token]);
+                        echo json_encode(['status' => 'true', 'otp' => $otp, 'device_id' => $device_id, 'csrf_token' => $new_csrf_token]);
                     }
+                }else{
+                    echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
+                }
+            }
+
+            if($action == "device-connect-status"){
+                if($global_user_login == true){
+                    $device_id = escape_string($_POST['device_id'] ?? '');
+                    if($device_id !== ''){
+                        $params = [':device_id' => $device_id];
+                        $response_device = json_decode(getData($db_prefix.'device', 'WHERE device_id = :device_id', '* FROM', $params), true);
+                        if($response_device['status'] == true && $response_device['response'][0]['status'] == 'used'){
+                            echo json_encode([
+                                'status' => 'true',
+                                'connected' => true,
+                                'device_name' => $response_device['response'][0]['name'] ?? '',
+                                'model' => $response_device['response'][0]['model'] ?? '',
+                                'csrf_token' => $new_csrf_token
+                            ]);
+                            exit();
+                        }
+                    }
+                    echo json_encode(['status' => 'true', 'connected' => false, 'csrf_token' => $new_csrf_token]);
                 }else{
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request' , 'csrf_token' => $new_csrf_token]);
                 }
@@ -9037,6 +9061,55 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
 
 
 
+            if($action == "live-recent-payments"){
+                if($global_user_login == true){
+                    $last_id = intval($_POST['last_id'] ?? 0);
+                    $brand_id = $global_response_brand['response'][0]['brand_id'] ?? '';
+                    
+                    $condition = ' WHERE status = "completed" AND brand_id = "'.$brand_id.'"';
+                    if($last_id > 0){
+                        $condition .= ' AND id > '.$last_id;
+                    } else {
+                        $condition .= ' ORDER BY id DESC LIMIT 5';
+                    }
+
+                    $response_tx = json_decode(getData($db_prefix.'transaction', $condition . ' ORDER BY id DESC LIMIT 10'), true);
+                    $new_payments = [];
+                    $max_id = $last_id;
+
+                    if($response_tx['status'] == true && !empty($response_tx['response'])){
+                        foreach($response_tx['response'] as $tx){
+                            $txId = intval($tx['id']);
+                            if($txId > $max_id) $max_id = $txId;
+
+                            $cust = json_decode($tx['customer_info'], true) ?: [];
+                            $new_payments[] = [
+                                'id'       => $txId,
+                                'ref'      => $tx['ref'],
+                                'amount'   => money_round($tx['amount'], 2),
+                                'currency' => $tx['currency'],
+                                'gateway'  => $tx['sender_key'] ?: 'Payment',
+                                'sender'   => $tx['sender'],
+                                'trx_id'   => $tx['trx_id'],
+                                'name'     => $cust['name'] ?? 'Customer',
+                                'time'     => convertUTCtoUserTZ($tx['updated_date'], 'Asia/Dhaka', 'h:i:s A')
+                            ];
+                        }
+                    }
+
+                    echo json_encode([
+                        'status'     => 'true',
+                        'last_id'    => $max_id,
+                        'payments'   => $new_payments,
+                        'csrf_token' => $new_csrf_token
+                    ]);
+                    exit();
+                } else {
+                    echo json_encode(['status' => 'false', 'message' => 'Unauthorized', 'csrf_token' => $new_csrf_token]);
+                    exit();
+                }
+            }
+
         }
 
         exit();
@@ -9720,54 +9793,6 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
                             echo json_encode(['status' => "false", 'title' => 'Invalid Credentials', 'message' => 'Please enter the correct credentials or scan the QR code again.']);
                         }
                     }
-                }
-            }
-
-                        if($action == "live-recent-payments"){
-                if($global_user_login == true){
-                    $last_id = intval($_POST['last_id'] ?? 0);
-                    $brand_id = $global_response_brand['response'][0]['brand_id'] ?? '';
-                    
-                    $condition = ' WHERE status = "completed" AND brand_id = "'.$brand_id.'"';
-                    if($last_id > 0){
-                        $condition .= ' AND id > '.$last_id;
-                    } else {
-                        $condition .= ' ORDER BY id DESC LIMIT 5';
-                    }
-
-                    $response_tx = json_decode(getData($db_prefix.'transaction', $condition . ' ORDER BY id DESC LIMIT 10'), true);
-                    $new_payments = [];
-                    $max_id = $last_id;
-
-                    if($response_tx['status'] == true && !empty($response_tx['response'])){
-                        foreach($response_tx['response'] as $tx){
-                            $txId = intval($tx['id']);
-                            if($txId > $max_id) $max_id = $txId;
-
-                            $cust = json_decode($tx['customer_info'], true) ?: [];
-                            $new_payments[] = [
-                                'id'       => $txId,
-                                'ref'      => $tx['ref'],
-                                'amount'   => money_round($tx['amount'], 2),
-                                'currency' => $tx['currency'],
-                                'gateway'  => $tx['sender_key'] ?: 'Payment',
-                                'sender'   => $tx['sender'],
-                                'trx_id'   => $tx['trx_id'],
-                                'name'     => $cust['name'] ?? 'Customer',
-                                'time'     => convertUTCtoUserTZ($tx['updated_date'], 'Asia/Dhaka', 'h:i:s A')
-                            ];
-                        }
-                    }
-
-                    echo json_encode([
-                        'status'   => 'true',
-                        'last_id'  => $max_id,
-                        'payments' => $new_payments
-                    ]);
-                    exit();
-                } else {
-                    echo json_encode(['status' => 'false', 'message' => 'Unauthorized']);
-                    exit();
                 }
             }
 

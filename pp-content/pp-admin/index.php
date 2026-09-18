@@ -1152,29 +1152,36 @@
         let isInitialLiveCheck = true;
 
         function checkLiveRecentPayments() {
+            var currentCsrf = $('input[name="csrf_token_default"]').val() || $('input[name="csrf_token"]').first().val() || '';
             $.ajax({
                 url: '<?php echo $site_url ?>',
                 type: 'POST',
                 data: {
                     action: 'live-recent-payments',
                     last_id: lastSeenPaymentId,
-                    csrf_token: '<?php echo $csrf_token ?? "" ?>'
+                    csrf_token: currentCsrf
                 },
                 dataType: 'json',
                 success: function(res) {
-                    if (res && res.status === 'true') {
-                        if (res.last_id) {
-                            if (isInitialLiveCheck) {
-                                lastSeenPaymentId = res.last_id;
-                                isInitialLiveCheck = false;
-                            } else if (res.payments && res.payments.length > 0) {
-                                res.payments.forEach(payment => {
-                                    if (payment.id > lastSeenPaymentId) {
-                                        playPaymentChime();
-                                        showPaymentToast(payment);
-                                    }
-                                });
-                                lastSeenPaymentId = res.last_id;
+                    if (res) {
+                        if (res.csrf_token) {
+                            $('input[name="csrf_token"]').val(res.csrf_token);
+                            $('input[name="csrf_token_default"]').val(res.csrf_token);
+                        }
+                        if (res.status === 'true') {
+                            if (res.last_id) {
+                                if (isInitialLiveCheck) {
+                                    lastSeenPaymentId = res.last_id;
+                                    isInitialLiveCheck = false;
+                                } else if (res.payments && res.payments.length > 0) {
+                                    res.payments.forEach(payment => {
+                                        if (payment.id > lastSeenPaymentId) {
+                                            playPaymentChime();
+                                            showPaymentToast(payment);
+                                        }
+                                    });
+                                    lastSeenPaymentId = res.last_id;
+                                }
                             }
                         }
                     }

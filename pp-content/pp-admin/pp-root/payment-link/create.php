@@ -303,6 +303,11 @@ if (!defined('PipraPay_INIT')) {
     $('.form-paymentLink-create').submit(function (e) {
         e.preventDefault();
 
+        var activeCsrf = $('input[name="csrf_token_default"]').val() || $('input[name="csrf_token"]').first().val();
+        if (activeCsrf) {
+            $(this).find('input[name="csrf_token"]').val(activeCsrf);
+        }
+
         var btn = document.querySelector(".btn-paymentLink-create").innerHTML;
         document.querySelector(".btn-paymentLink-create").innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>';
 
