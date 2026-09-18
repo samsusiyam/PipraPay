@@ -207,7 +207,7 @@ CREATE TABLE `pp_customer` (
 
 CREATE TABLE `pp_device` (
   `id` int(11) NOT NULL,
-  `d_id` varchar(40) NOT NULL,
+  `d_id` varchar(128) NOT NULL,
   `device_id` varchar(15) NOT NULL,
   `otp` varchar(15) NOT NULL,
   `name` text NULL,
