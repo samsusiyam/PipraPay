@@ -9,7 +9,9 @@
         exit('Direct access not allowed');
     }
 
-    session_start();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 
     if (date_default_timezone_get() !== 'UTC') {
         date_default_timezone_set('UTC');
@@ -445,10 +447,12 @@ aa021689e729dc2302b47e9bdc7d1a9f8b72f95f01530da35bf3b848b188d5b1
             echo json_encode(['status' => "false", 'title' => 'Oops! Something went wrong', 'message' => 'Your request could not be processed. Please try again.']);
         }else{
             if($pp_app_token == ''){
-                if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+                if (empty($_SESSION['csrf_token'])) {
                     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    $new_csrf_token = $_SESSION['csrf_token'];
+                }
+                $new_csrf_token = $_SESSION['csrf_token'];
 
+                if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], (string)$_POST['csrf_token'])) {
                     echo json_encode(['status' => 'false', 'title' => 'Request Failed', 'message' => 'Invalid request token' , 'csrf_token' => $new_csrf_token]);
                     exit;
                 }

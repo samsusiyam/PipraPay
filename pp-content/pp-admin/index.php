@@ -534,6 +534,21 @@
     <input type="hidden" name="csrf_token_default" value="<?= $csrf_token; ?>">
     
     <script data-cfasync="false">
+        // Global CSRF handler for all AJAX requests
+        $(document).ajaxComplete(function(event, xhr, settings) {
+            try {
+                var data = xhr.responseJSON || (xhr.responseText ? JSON.parse(xhr.responseText) : null);
+                if (data && data.csrf_token) {
+                    $('input[name="csrf_token"]').val(data.csrf_token);
+                    $('input[name="csrf_token_default"]').val(data.csrf_token);
+                }
+            } catch (e) {}
+        });
+
+        function getActiveCsrfToken() {
+            return $('input[name="csrf_token_default"]').val() || $('input[name="csrf_token"]').first().val() || '';
+        }
+
         //all declaration#
         let chartTransactionStatistics = null;
         let chartGatewayStatistics = null;
@@ -985,6 +1000,12 @@
             .then(res => res.text())
             .then(html => {
                 $('.root-print').html(html);
+
+                var newPageCsrf = $('.root-print').find('input[name="csrf_token"]').val();
+                if (newPageCsrf) {
+                    $('input[name="csrf_token_default"]').val(newPageCsrf);
+                    $('input[name="csrf_token"]').val(newPageCsrf);
+                }
 
                 initHugeRTE();
 
